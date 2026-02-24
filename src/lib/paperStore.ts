@@ -10,7 +10,7 @@ function createStore() {
 
   // Load from localStorage
   try {
-    const stored = localStorage.getItem('omniscope_paper');
+    const stored = localStorage.getItem('oracle_paper');
     if (stored) {
       const data = JSON.parse(stored);
       trades = data.trades || [];
@@ -20,7 +20,7 @@ function createStore() {
   } catch {}
 
   function save() {
-    localStorage.setItem('omniscope_paper', JSON.stringify({
+    localStorage.setItem('oracle_paper', JSON.stringify({
       trades,
       ignoredTokens: [...ignoredTokens],
       trackedTokens: [...trackedTokens],

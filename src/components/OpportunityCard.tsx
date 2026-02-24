@@ -76,7 +76,7 @@ Why:
 ${opp.topReasons.map(r => `• ${r}`).join('\n')}
 
 ⚠ ${opp.invalidation}
-— OMNISCOPE`;
+— ORACLE`;
 
     navigator.clipboard.writeText(plan);
     toast({ title: 'Trade plan copied!', description: 'Ready to paste in Telegram/Notes.' });

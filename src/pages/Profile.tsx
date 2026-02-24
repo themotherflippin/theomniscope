@@ -147,7 +147,7 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
 
         {/* Footer */}
         <div className="text-center text-[10px] text-muted-foreground/40 pb-8 space-y-0.5 font-mono">
-          <p>OMNISCOPE v1.0</p>
+          <p>ORACLE v1.0 — by The Flippin' Labs</p>
           <p>Information only — not financial advice</p>
         </div>
       </main>

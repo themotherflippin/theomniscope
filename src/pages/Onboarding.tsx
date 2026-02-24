@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import oracleLogo from '@/assets/oracle-logo.png';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -65,12 +66,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto"
+          className="w-24 h-24 mx-auto"
         >
-          <span className="text-2xl font-display font-bold text-primary">O</span>
+          <img src={oracleLogo} alt="Oracle by The Flippin' Labs" className="w-full h-full object-contain" />
         </motion.div>
-        <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">OMNISCOPE</h1>
-        <p className="text-sm text-muted-foreground">Elite DEX Intelligence</p>
+        <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">ORACLE</h1>
+        <p className="text-sm text-muted-foreground">by The Flippin' Labs</p>
       </div>
       <div className="grid gap-3">
         {([
@@ -281,7 +282,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             onClick={finish}
           >
             <Zap className="w-4 h-4 mr-1" />
-            Launch OMNISCOPE
+            Launch ORACLE
           </Button>
         )}
       </div>
