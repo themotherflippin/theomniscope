@@ -6,49 +6,49 @@
 
 @layer base {
   :root {
-    --background: 225 25% 5%;
-    --foreground: 210 20% 95%;
+    --background: 220 30% 4%;
+    --foreground: 220 10% 92%;
 
-    --card: 225 22% 8%;
-    --card-foreground: 210 20% 95%;
+    --card: 220 25% 7%;
+    --card-foreground: 220 10% 92%;
 
-    --popover: 225 22% 10%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 220 25% 9%;
+    --popover-foreground: 220 10% 92%;
 
-    --primary: 160 100% 45%;
-    --primary-foreground: 225 25% 5%;
+    --primary: 190 95% 50%;
+    --primary-foreground: 220 30% 4%;
 
-    --secondary: 225 18% 13%;
-    --secondary-foreground: 210 15% 75%;
+    --secondary: 220 20% 12%;
+    --secondary-foreground: 220 10% 70%;
 
-    --muted: 225 16% 11%;
-    --muted-foreground: 215 12% 45%;
+    --muted: 220 18% 10%;
+    --muted-foreground: 220 10% 42%;
 
-    --accent: 225 18% 15%;
-    --accent-foreground: 210 20% 95%;
+    --accent: 220 20% 14%;
+    --accent-foreground: 220 10% 92%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 225 14% 14%;
-    --input: 225 14% 14%;
-    --ring: 160 100% 45%;
+    --border: 220 16% 13%;
+    --input: 220 16% 13%;
+    --ring: 190 95% 50%;
 
     --radius: 0.75rem;
 
     /* Trading semantic tokens */
     --success: 152 82% 42%;
-    --success-foreground: 225 25% 5%;
+    --success-foreground: 220 30% 4%;
     --warning: 42 100% 55%;
-    --warning-foreground: 225 25% 5%;
+    --warning-foreground: 220 30% 4%;
     --danger: 0 84% 60%;
     --danger-foreground: 210 40% 98%;
 
     --chart-green: 152 82% 42%;
     --chart-red: 0 84% 60%;
-    --chart-blue: 217 91% 60%;
+    --chart-blue: 190 95% 50%;
     --chart-yellow: 42 100% 55%;
-    --chart-cyan: 160 100% 45%;
+    --chart-cyan: 190 95% 50%;
 
     --signal-entry: 152 82% 42%;
     --signal-exit: 0 84% 60%;
@@ -61,18 +61,18 @@
     --risk-critical: 0 90% 40%;
 
     /* Premium glow effects */
-    --glow-primary: 160 100% 45%;
+    --glow-primary: 190 95% 50%;
     --glow-success: 152 82% 42%;
     --glow-danger: 0 84% 60%;
 
-    --sidebar-background: 225 25% 5%;
-    --sidebar-foreground: 210 20% 80%;
-    --sidebar-primary: 160 100% 45%;
-    --sidebar-primary-foreground: 225 25% 5%;
-    --sidebar-accent: 225 18% 13%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 225 14% 14%;
-    --sidebar-ring: 160 100% 45%;
+    --sidebar-background: 220 30% 4%;
+    --sidebar-foreground: 220 10% 75%;
+    --sidebar-primary: 190 95% 50%;
+    --sidebar-primary-foreground: 220 30% 4%;
+    --sidebar-accent: 220 20% 12%;
+    --sidebar-accent-foreground: 220 10% 92%;
+    --sidebar-border: 220 16% 13%;
+    --sidebar-ring: 190 95% 50%;
   }
 }
 
