@@ -13,9 +13,11 @@ const SYMBOLS = [
   { symbol: 'MEME', name: 'Memecoin', chain: 'ethereum' as Chain, dex: 'uniswap_v2' as DEX },
   { symbol: 'BONK', name: 'Bonk', chain: 'ethereum' as Chain, dex: 'uniswap_v3' as DEX },
   { symbol: 'WIF', name: 'dogwifhat', chain: 'ethereum' as Chain, dex: 'uniswap_v3' as DEX },
-  { symbol: 'NEIRO', name: 'Neiro', chain: 'ethereum' as Chain, dex: 'uniswap_v2' as DEX },
-  { symbol: 'MOG', name: 'Mog Coin', chain: 'ethereum' as Chain, dex: 'uniswap_v3' as DEX },
-  { symbol: 'BRETT', name: 'Brett', chain: 'ethereum' as Chain, dex: 'uniswap_v2' as DEX },
+  { symbol: 'NEIRO', name: 'Neiro', chain: 'base' as Chain, dex: 'uniswap_v3' as DEX },
+  { symbol: 'MOG', name: 'Mog Coin', chain: 'base' as Chain, dex: 'uniswap_v3' as DEX },
+  { symbol: 'BRETT', name: 'Brett', chain: 'base' as Chain, dex: 'uniswap_v2' as DEX },
+  { symbol: 'AERO', name: 'Aerodrome', chain: 'base' as Chain, dex: 'sushiswap' as DEX },
+  { symbol: 'VIRTUAL', name: 'Virtual', chain: 'base' as Chain, dex: 'uniswap_v3' as DEX },
 ];
 
 function rand(min: number, max: number) {

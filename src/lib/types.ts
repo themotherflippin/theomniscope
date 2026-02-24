@@ -1,4 +1,4 @@
-export type Chain = 'ethereum' | 'bsc' | 'arbitrum' | 'polygon';
+export type Chain = 'ethereum' | 'bsc' | 'arbitrum' | 'polygon' | 'base';
 export type DEX = 'uniswap_v2' | 'uniswap_v3' | 'pancakeswap' | 'sushiswap';
 export type SignalType = 'ENTRY' | 'EXIT' | 'HOLD' | 'AVOID';
 export type SignalStrategy = 'breakout' | 'reversal' | 'trend_follow';

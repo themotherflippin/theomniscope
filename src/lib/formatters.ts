@@ -35,6 +35,7 @@ export function chainLabel(chain: string): string {
     bsc: 'BSC',
     arbitrum: 'ARB',
     polygon: 'POLY',
+    base: 'BASE',
   };
   return labels[chain] || chain.toUpperCase();
 }
