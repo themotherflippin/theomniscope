@@ -42,6 +42,12 @@ export interface RiskReport {
   level: RiskLevel;
   flags: RiskFlag[];
   badge: string | null; // "AVOID" if critical
+  // V2 additions
+  liquidityDrainRisk: number; // 0-100
+  taxChangeDetected: boolean;
+  ownerActions: OwnerAction[];
+  honeypotProbability: number; // 0-100
+  deployerReputation: DeployerReputation | null;
 }
 
 export interface RiskFlag {
@@ -49,6 +55,21 @@ export interface RiskFlag {
   label: string;
   severity: 'info' | 'warning' | 'danger' | 'critical';
   detail: string;
+}
+
+export interface OwnerAction {
+  action: string;
+  timestamp: number;
+  severity: 'info' | 'warning' | 'danger';
+}
+
+export interface DeployerReputation {
+  address: string;
+  totalProjects: number;
+  rugCount: number;
+  cleanCount: number;
+  avgLifespan: number; // hours
+  reputation: 'trusted' | 'neutral' | 'suspicious' | 'scammer';
 }
 
 export interface Signal {
@@ -68,11 +89,112 @@ export interface Signal {
   timestamp: number;
 }
 
+// Opportunity Scoring
+export interface OpportunityScore {
+  tokenId: string;
+  tokenSymbol: string;
+  totalScore: number; // 0-100
+  capped: boolean; // true if critical risk capped the score
+  cappedReason: string | null;
+  factors: OpportunityFactor[];
+  topReasons: string[]; // top 5 reasons
+  grade: 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
+  action: 'STRONG_BUY' | 'BUY' | 'WATCH' | 'AVOID';
+  // Trade plan
+  entryZone: string;
+  stopLoss: string;
+  takeProfit1: string;
+  takeProfit2: string;
+  riskRewardRatio: number;
+  invalidation: string;
+  // Execution
+  estimatedSlippage: number; // percentage
+  priceImpact: number; // percentage for $1000 order
+  timestamp: number;
+}
+
+export interface OpportunityFactor {
+  name: string;
+  category: 'momentum' | 'flow' | 'liquidity' | 'risk' | 'context';
+  score: number; // 0-20 (each category max 20)
+  weight: number;
+  detail: string;
+}
+
+// Smart Money
+export interface SmartWallet {
+  address: string;
+  label: string;
+  type: 'whale' | 'smart_trader' | 'insider' | 'deployer' | 'fund';
+  winRate: number;
+  totalTrades: number;
+  pnl: number; // total PnL in USD
+  lastActive: number;
+  tags: string[];
+}
+
+export interface WalletActivity {
+  wallet: SmartWallet;
+  tokenId: string;
+  action: 'buy' | 'sell' | 'add_liq' | 'remove_liq';
+  amount: number; // USD value
+  timestamp: number;
+  isAccumulation: boolean;
+}
+
+export interface SmartMoneySignal {
+  id: string;
+  tokenId: string;
+  tokenSymbol: string;
+  type: 'accumulation' | 'distribution' | 'rotation' | 'new_position';
+  walletCount: number;
+  totalVolume: number;
+  confidence: Confidence;
+  detail: string;
+  timestamp: number;
+}
+
+export interface WhosBuying {
+  topBuyers: { wallet: SmartWallet; netBuy: number }[];
+  newWallets: number;
+  winnerWallets: number; // wallets with positive PnL
+  totalSmartMoneyFlow: number;
+}
+
+// Paper Trading
+export interface PaperTrade {
+  id: string;
+  tokenId: string;
+  tokenSymbol: string;
+  entryPrice: number;
+  currentPrice: number;
+  stopLoss: number;
+  takeProfit1: number;
+  takeProfit2: number;
+  positionSize: number; // USD
+  entrySlippage: number;
+  status: 'open' | 'closed_tp1' | 'closed_tp2' | 'closed_sl' | 'closed_manual';
+  pnl: number;
+  pnlPercent: number;
+  openedAt: number;
+  closedAt?: number;
+}
+
+export interface PaperPortfolio {
+  trades: PaperTrade[];
+  totalPnl: number;
+  winRate: number;
+  maxDrawdown: number;
+  expectancy: number;
+  totalTrades: number;
+}
+
 export interface Alert {
   id: string;
   tokenId: string;
   tokenSymbol: string;
-  type: 'price' | 'volume' | 'signal' | 'risk';
+  type: 'price' | 'volume' | 'signal' | 'risk' | 'liquidity_drain' | 'tax_change' | 'smart_money';
+  priority: 'low' | 'medium' | 'high' | 'critical';
   message: string;
   timestamp: number;
   read: boolean;
@@ -85,4 +207,13 @@ export interface CandleData {
   low: number;
   close: number;
   volume: number;
+}
+
+// Daily Brief
+export interface DailyBrief {
+  topOpportunities: OpportunityScore[];
+  topDangers: { token: Token; risk: RiskReport; reason: string }[];
+  marketSentiment: 'bullish' | 'neutral' | 'bearish';
+  smartMoneyTrend: string;
+  timestamp: number;
 }

@@ -4,20 +4,22 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { MiniChart } from '@/components/MiniChart';
 import { SignalCard } from '@/components/SignalCard';
 import { RiskPanel } from '@/components/RiskPanel';
+import { SmartMoneyPanel } from '@/components/SmartMoneyPanel';
 import { Disclaimer } from '@/components/Disclaimer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { estimateSlippage, estimatePriceImpact } from '@/lib/opportunityScorer';
 import {
-  formatPrice, formatPct, formatNumber, shortenAddress, chainLabel, dexLabel,
+  formatPrice, formatPct, formatNumber, shortenAddress, chainLabel,
 } from '@/lib/formatters';
 import {
-  ArrowLeft, Copy, TrendingUp, BarChart3, Users, Clock, Activity,
+  ArrowLeft, Copy, TrendingUp, BarChart3, Users, Clock, Activity, AlertTriangle,
 } from 'lucide-react';
 
 export default function TokenDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tokens, signals, risks } = useMarketData();
+  const { tokens, signals, risks, smartMoneySignals, getWhosBuying, oppScores } = useMarketData();
 
   const token = tokens.find(t => t.id === id);
   if (!token) {
@@ -36,20 +38,33 @@ export default function TokenDetail() {
   const risk = risks.get(token.id);
   const tokenSignals = signals.filter(s => s.tokenId === token.id);
   const positive = token.priceChange24h >= 0;
+  const whosBuying = getWhosBuying(token.id);
+  const oppScore = oppScores.find(o => o.tokenId === token.id);
+  const slippage1k = estimateSlippage(token.liquidity, 1000);
+  const slippage5k = estimateSlippage(token.liquidity, 5000);
+  const impact1k = estimatePriceImpact(token.liquidity, 1000);
 
   return (
     <div className="min-h-screen bg-background gradient-hero">
       <Disclaimer />
 
-      {/* Header */}
       <header className="glass-strong border-b border-border/50 px-4 py-3">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2.5 flex-1">
-            <div className="w-8 h-8 rounded-lg bg-secondary/80 flex items-center justify-center text-sm font-bold font-mono">
-              {token.symbol.slice(0, 2)}
+            <div className="relative">
+              <div className="w-8 h-8 rounded-lg bg-secondary/80 flex items-center justify-center text-sm font-bold font-mono">
+                {token.symbol.slice(0, 2)}
+              </div>
+              {oppScore && (
+                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded text-[8px] font-bold font-mono flex items-center justify-center ${
+                  oppScore.grade === 'S' || oppScore.grade === 'A' ? 'bg-success/20 text-success' : oppScore.grade === 'F' ? 'bg-danger/20 text-danger' : 'bg-primary/20 text-primary'
+                }`}>
+                  {oppScore.grade}
+                </div>
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -62,8 +77,7 @@ export default function TokenDetail() {
             </div>
           </div>
           <Button
-            variant="ghost"
-            size="sm"
+            variant="ghost" size="sm"
             className="text-[10px] font-mono text-muted-foreground h-7"
             onClick={() => navigator.clipboard.writeText(token.address)}
           >
@@ -75,30 +89,41 @@ export default function TokenDetail() {
 
       <main className="p-4 space-y-4">
         {/* Price + Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="gradient-card-elevated rounded-xl p-4"
-        >
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="gradient-card-elevated rounded-xl p-4">
           <div className="flex items-baseline gap-3 mb-4">
-            <span className="text-2xl font-bold font-mono text-foreground tabular-nums">
-              {formatPrice(token.price)}
-            </span>
-            <span className={`text-sm font-mono font-semibold tabular-nums ${positive ? 'text-success' : 'text-danger'}`}>
-              {formatPct(token.priceChange24h)}
-            </span>
+            <span className="text-2xl font-bold font-mono text-foreground tabular-nums">{formatPrice(token.price)}</span>
+            <span className={`text-sm font-mono font-semibold tabular-nums ${positive ? 'text-success' : 'text-danger'}`}>{formatPct(token.priceChange24h)}</span>
+            {oppScore && (
+              <span className="text-[10px] font-mono text-muted-foreground ml-auto">
+                Score {oppScore.totalScore}/100
+              </span>
+            )}
           </div>
           <MiniChart basePrice={token.price} height={200} positive={positive} />
         </motion.div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Execution Warning */}
+        {slippage1k > 0.5 && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="gradient-card rounded-xl p-3"
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}
+            className="flex items-start gap-2 p-3 rounded-xl bg-warning/5 border border-warning/15"
           >
+            <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+            <div className="text-[11px] space-y-0.5">
+              <p className="text-warning font-medium">Execution Warning</p>
+              <p className="text-warning/70">
+                $1K order → {slippage1k.toFixed(2)}% slippage, {impact1k.toFixed(3)}% price impact
+              </p>
+              <p className="text-warning/70">
+                $5K order → {slippage5k.toFixed(2)}% slippage
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Metrics + Indicators */}
+        <div className="grid grid-cols-2 gap-3">
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="gradient-card rounded-xl p-3">
             <h3 className="text-[10px] font-display text-muted-foreground mb-2 uppercase tracking-wider">Metrics</h3>
             <div className="space-y-2">
               {[
@@ -110,8 +135,7 @@ export default function TokenDetail() {
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Icon className="w-3 h-3" />
-                    <span className="text-[11px]">{label}</span>
+                    <Icon className="w-3 h-3" /><span className="text-[11px]">{label}</span>
                   </div>
                   <span className="text-[11px] font-mono text-foreground tabular-nums">{value}</span>
                 </div>
@@ -119,12 +143,7 @@ export default function TokenDetail() {
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="gradient-card rounded-xl p-3"
-          >
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="gradient-card rounded-xl p-3">
             <h3 className="text-[10px] font-display text-muted-foreground mb-2 uppercase tracking-wider">Indicators</h3>
             <div className="space-y-2">
               {[
@@ -145,39 +164,32 @@ export default function TokenDetail() {
 
         {/* Risk Scanner */}
         {risk && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             <RiskPanel token={token} risk={risk} />
           </motion.div>
         )}
 
+        {/* Smart Money */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <SmartMoneyPanel
+            whosBuying={whosBuying}
+            signals={smartMoneySignals}
+            tokenId={token.id}
+          />
+        </motion.div>
+
         {/* Signals */}
         {tokenSignals.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-3"
-          >
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="space-y-3">
             <h2 className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">
               Signals ({tokenSignals.length})
             </h2>
-            {tokenSignals.map(sig => (
-              <SignalCard key={sig.id} signal={sig} />
-            ))}
+            {tokenSignals.map(sig => (<SignalCard key={sig.id} signal={sig} />))}
           </motion.div>
         )}
 
         {/* On-chain Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="gradient-card rounded-xl p-4"
-        >
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="gradient-card rounded-xl p-4">
           <h3 className="text-[10px] font-display text-muted-foreground mb-3 uppercase tracking-wider">On-chain Activity</h3>
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">
@@ -193,16 +205,9 @@ export default function TokenDetail() {
               <p className="text-[10px] text-muted-foreground mt-0.5">Sells</p>
             </div>
           </div>
-          {/* Buy/Sell pressure bar */}
           <div className="mt-3 h-2 rounded-full overflow-hidden flex bg-muted">
-            <div
-              className="h-full rounded-l-full bg-success/80 transition-all"
-              style={{ width: `${(token.buyCount / (token.buyCount + token.sellCount)) * 100}%` }}
-            />
-            <div
-              className="h-full rounded-r-full bg-danger/80 transition-all"
-              style={{ width: `${(token.sellCount / (token.buyCount + token.sellCount)) * 100}%` }}
-            />
+            <div className="h-full rounded-l-full bg-success/80" style={{ width: `${(token.buyCount / (token.buyCount + token.sellCount)) * 100}%` }} />
+            <div className="h-full rounded-r-full bg-danger/80" style={{ width: `${(token.sellCount / (token.buyCount + token.sellCount)) * 100}%` }} />
           </div>
           <div className="flex justify-between mt-1 text-[10px] text-muted-foreground font-mono">
             <span>Buy pressure</span>

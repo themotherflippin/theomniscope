@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useMarketData } from '@/hooks/useMarketData';
 import { TokenCard } from '@/components/TokenCard';
 import { TokenTable } from '@/components/TokenTable';
+import { DailyBrief } from '@/components/DailyBrief';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -11,7 +12,7 @@ import { formatPrice, formatPct } from '@/lib/formatters';
 import type { UserPreferences } from '@/lib/userPreferences';
 import type { Chain } from '@/lib/types';
 import {
-  Search, TrendingUp, TrendingDown, Flame, ShieldAlert, X, Activity
+  Search, TrendingUp, TrendingDown, Flame, ShieldAlert, X, Activity, Sun
 } from 'lucide-react';
 
 interface RadarProps {
@@ -26,9 +27,10 @@ const chainFilterMap: Record<QuickFilter, Chain | null> = {
 export default function Radar({ prefs }: RadarProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { tokens, risks, signals } = useMarketData();
+  const { tokens, risks, dailyBrief } = useMarketData();
   const [search, setSearch] = useState('');
   const [chainFilter, setChainFilter] = useState<QuickFilter>('all');
+  const [showBrief, setShowBrief] = useState(false);
 
   const filtered = tokens.filter(t => {
     if (search && !t.symbol.toLowerCase().includes(search.toLowerCase()) && !t.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -56,6 +58,13 @@ export default function Radar({ prefs }: RadarProps) {
             <Activity className="w-4 h-4 text-primary" />
             <h1 className="text-base font-display font-bold text-foreground tracking-tight">Radar</h1>
           </div>
+          <button
+            onClick={() => setShowBrief(true)}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-warning/10 text-warning text-[10px] font-medium border border-warning/15 hover:bg-warning/15 transition-colors"
+          >
+            <Sun className="w-3 h-3" />
+            Brief
+          </button>
           <Badge variant="outline" className="text-[9px] font-mono border-primary/20 text-primary animate-pulse-glow px-2">
             ● LIVE
           </Badge>
@@ -76,7 +85,6 @@ export default function Radar({ prefs }: RadarProps) {
             )}
           </div>
         </div>
-        {/* Chain filter */}
         <div className="flex gap-1.5 mt-2.5 overflow-x-auto scrollbar-none pb-0.5">
           {(['all', 'eth', 'bsc', 'arb', 'poly', 'base'] as QuickFilter[]).map(f => (
             <button
@@ -95,7 +103,7 @@ export default function Radar({ prefs }: RadarProps) {
       </header>
 
       <main className="px-4 py-4 space-y-6">
-        {/* Market Pulse - Top Gainers */}
+        {/* Top Gainers */}
         <section>
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-success" />
@@ -153,13 +161,7 @@ export default function Radar({ prefs }: RadarProps) {
           </div>
           <div className="gradient-card rounded-xl overflow-hidden">
             {newTokens.map(t => (
-              <TokenCard
-                key={t.id}
-                token={t}
-                risk={risks.get(t.id)}
-                onSelect={() => navigate(`/token/${t.id}`)}
-                compact
-              />
+              <TokenCard key={t.id} token={t} risk={risks.get(t.id)} onSelect={() => navigate(`/token/${t.id}`)} compact />
             ))}
           </div>
         </section>
@@ -173,13 +175,7 @@ export default function Radar({ prefs }: RadarProps) {
             </div>
             <div className="gradient-card rounded-xl overflow-hidden border-danger/10">
               {highRisk.map(t => (
-                <TokenCard
-                  key={t.id}
-                  token={t}
-                  risk={risks.get(t.id)}
-                  onSelect={() => navigate(`/token/${t.id}`)}
-                  compact
-                />
+                <TokenCard key={t.id} token={t} risk={risks.get(t.id)} onSelect={() => navigate(`/token/${t.id}`)} compact />
               ))}
             </div>
           </section>
@@ -193,24 +189,25 @@ export default function Radar({ prefs }: RadarProps) {
           {isMobile ? (
             <div className="space-y-2.5">
               {filtered.map(t => (
-                <TokenCard
-                  key={t.id}
-                  token={t}
-                  risk={risks.get(t.id)}
-                  onSelect={() => navigate(`/token/${t.id}`)}
-                  showChain={isPro}
-                />
+                <TokenCard key={t.id} token={t} risk={risks.get(t.id)} onSelect={() => navigate(`/token/${t.id}`)} showChain={isPro} />
               ))}
             </div>
           ) : (
-            <TokenTable
-              tokens={filtered}
-              risks={risks}
-              onSelect={t => navigate(`/token/${t.id}`)}
-            />
+            <TokenTable tokens={filtered} risks={risks} onSelect={t => navigate(`/token/${t.id}`)} />
           )}
         </section>
       </main>
+
+      {/* Daily Brief Modal */}
+      <AnimatePresence>
+        {showBrief && (
+          <DailyBrief
+            brief={dailyBrief}
+            onClose={() => setShowBrief(false)}
+            onSelectToken={(id) => navigate(`/token/${id}`)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
