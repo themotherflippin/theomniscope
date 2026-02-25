@@ -60,12 +60,12 @@ export default function Radar({ prefs }: RadarProps) {
 
   const topGainers = useMemo(() => [...filtered].sort((a, b) => b.priceChange1h - a.priceChange1h).slice(0, 15), [filtered]);
   const topLosers = useMemo(() => [...filtered].sort((a, b) => a.priceChange1h - b.priceChange1h).slice(0, 15), [filtered]);
-  const topVolume = useMemo(() => [...filtered].sort((a, b) => b.volume24h - a.volume24h).slice(0, 10), [filtered]);
-  const newTokens = useMemo(() => [...filtered].sort((a, b) => a.ageHours - b.ageHours).slice(0, 10), [filtered]);
+  const topVolume = useMemo(() => [...filtered].sort((a, b) => b.volume24h - a.volume24h).slice(0, 15), [filtered]);
+  const newTokens = useMemo(() => [...filtered].sort((a, b) => a.ageHours - b.ageHours).slice(0, 15), [filtered]);
   const highRisk = useMemo(() => filtered.filter(tk => {
     const r = risks.get(tk.id);
     return r && r.score >= 50;
-  }).sort((a, b) => (risks.get(b.id)?.score || 0) - (risks.get(a.id)?.score || 0)).slice(0, 5), [filtered, risks]);
+  }).sort((a, b) => (risks.get(b.id)?.score || 0) - (risks.get(a.id)?.score || 0)).slice(0, 10), [filtered, risks]);
 
   const isPro = prefs.mode === 'pro';
 
@@ -161,11 +161,7 @@ export default function Radar({ prefs }: RadarProps) {
             <h2 className="text-sm font-display font-semibold text-foreground">{t('radar.topVolume')}</h2>
             <span className="text-[10px] text-muted-foreground font-mono ml-auto">24h</span>
           </div>
-          <div className="gradient-card rounded-xl overflow-hidden">
-            {topVolume.map(tk => (
-              <TokenCard key={tk.id} token={tk} risk={risks.get(tk.id)} onSelect={() => navigate(`/token/${tk.id}`)} compact showChain />
-            ))}
-          </div>
+          <TokenCarousel tokens={topVolume} variant="default" />
         </section>
 
         {/* New Listings */}
@@ -174,11 +170,7 @@ export default function Radar({ prefs }: RadarProps) {
             <Flame className="w-4 h-4 text-warning" />
             <h2 className="text-sm font-display font-semibold text-foreground">{t('radar.newListings')}</h2>
           </div>
-          <div className="gradient-card rounded-xl overflow-hidden">
-            {newTokens.map(tk => (
-              <TokenCard key={tk.id} token={tk} risk={risks.get(tk.id)} onSelect={() => navigate(`/token/${tk.id}`)} compact showChain />
-            ))}
-          </div>
+          <TokenCarousel tokens={newTokens} variant="default" />
         </section>
 
         {/* Danger Zone */}
@@ -188,11 +180,7 @@ export default function Radar({ prefs }: RadarProps) {
               <ShieldAlert className="w-4 h-4 text-danger" />
               <h2 className="text-sm font-display font-semibold text-foreground">{t('radar.dangerZone')}</h2>
             </div>
-            <div className="gradient-card rounded-xl overflow-hidden border-danger/10">
-              {highRisk.map(tk => (
-                <TokenCard key={tk.id} token={tk} risk={risks.get(tk.id)} onSelect={() => navigate(`/token/${tk.id}`)} compact showChain />
-              ))}
-            </div>
+            <TokenCarousel tokens={highRisk} variant="danger" />
           </section>
         )}
 

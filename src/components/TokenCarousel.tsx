@@ -9,30 +9,30 @@ interface TokenCarouselProps {
 }
 
 export function TokenCarousel({ tokens, variant }: TokenCarouselProps) {
-  const [emblaRef] = useEmblaCarousel({ align: 'start', dragFree: true, loop: false, skipSnaps: true });
+  const [emblaRef] = useEmblaCarousel({ align: 'start', dragFree: true, loop: false });
   const navigate = useNavigate();
 
   const changeColor = variant === 'success' ? 'text-success' : variant === 'danger' ? 'text-danger' : 'text-foreground';
-  const borderAccent = variant === 'success' ? 'border-success/15' : variant === 'danger' ? 'border-danger/15' : 'border-border/50';
+  const borderAccent = variant === 'success' ? 'border-success/20' : variant === 'danger' ? 'border-danger/20' : 'border-border/50';
+  const glowAccent = variant === 'success' ? 'shadow-success/10' : variant === 'danger' ? 'shadow-danger/10' : 'shadow-primary/10';
 
   return (
     <div className="overflow-hidden -mx-4 px-4" ref={emblaRef}>
-      <div className="flex gap-2">
+      <div className="flex gap-2.5">
         {tokens.map((tk) => (
           <button
             key={tk.id}
             onClick={() => navigate(`/token/${tk.id}`)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${borderAccent} bg-card/60 backdrop-blur-sm min-w-fit flex-shrink-0 active:scale-[0.97] transition-transform`}
+            className={`flex-[0_0_72%] sm:flex-[0_0_48%] flex items-center justify-between gap-3 px-3 py-2 rounded-xl border ${borderAccent} ${glowAccent} shadow-sm bg-card/70 backdrop-blur-sm active:scale-[0.98] transition-transform`}
           >
-            <div className="flex flex-col items-start">
-              <div className="flex items-center gap-1">
-                <span className="font-bold text-foreground text-[11px]">{tk.symbol}</span>
-                <span className="text-[7px] text-muted-foreground uppercase px-1 py-0.5 rounded bg-secondary/60">{tk.chain.slice(0, 3)}</span>
-              </div>
+            <div className="flex flex-col items-start min-w-0">
+              <span className="font-bold text-foreground text-xs truncate">{tk.symbol}</span>
+              <span className="text-[10px] text-muted-foreground truncate">{tk.name}</span>
             </div>
-            <div className="flex flex-col items-end">
-              <span className="font-mono text-[10px] text-foreground tabular-nums">{formatPrice(tk.price)}</span>
-              <span className={`font-mono text-[10px] tabular-nums font-semibold ${changeColor}`}>{formatPct(tk.priceChange1h)}</span>
+            <div className="flex flex-col items-end shrink-0">
+              <span className="text-[9px] text-muted-foreground uppercase px-1.5 py-0.5 rounded bg-secondary/70 mb-0.5">{tk.chain.slice(0, 3)}</span>
+              <span className="font-mono text-[11px] text-foreground tabular-nums">{formatPrice(tk.price)}</span>
+              <span className={`font-mono text-[11px] tabular-nums font-semibold ${changeColor}`}>{formatPct(tk.priceChange1h)}</span>
             </div>
           </button>
         ))}
