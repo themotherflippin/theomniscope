@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import oracleLogo from '@/assets/oracle-logo.png';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   // Check if this device already has access
   useEffect(() => {
@@ -144,6 +146,12 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
         </div>
 
         <p className="text-[11px] text-muted-foreground">by The Flippin' Labs</p>
+        <button
+          onClick={() => navigate('/admin')}
+          className="mt-2 text-[10px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+        >
+          ⚙
+        </button>
       </motion.div>
     </div>
   );
