@@ -1,13 +1,18 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import type { UserPreferences } from '@/lib/userPreferences';
 import type { Chain } from '@/lib/types';
 import {
   Eye, Gauge, Shield, Zap, TrendingUp,
-  RotateCcw, Settings, Sun, Moon
+  RotateCcw, Settings, Sun, Moon, ShieldCheck
 } from 'lucide-react';
 import type { ThemeMode } from '@/lib/userPreferences';
+
+const ADMIN_CODE = 'JPKW9ZVZ';
 
 interface ProfileProps {
   prefs: UserPreferences;
@@ -16,6 +21,24 @@ interface ProfileProps {
 
 export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
   const { t, lang, toggleLang } = useI18n();
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const deviceId = localStorage.getItem('oracle_device_id');
+    if (!deviceId) return;
+    supabase
+      .from('invitation_codes')
+      .select('code')
+      .eq('device_id', deviceId)
+      .eq('is_used', true)
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0 && data[0].code === ADMIN_CODE) {
+          setIsAdmin(true);
+        }
+      });
+  }, []);
 
   const riskLabels = {
     conservative: t('onboarding.conservative'),
@@ -138,6 +161,20 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
             ))}
           </div>
         </motion.section>
+
+        {/* Admin access */}
+        {isAdmin && (
+          <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }} className="gradient-card rounded-xl p-4">
+            <Button
+              variant="outline"
+              className="w-full border-primary/30 text-primary hover:bg-primary/5"
+              onClick={() => navigate('/admin')}
+            >
+              <ShieldCheck className="w-4 h-4 mr-2" />
+              Administration
+            </Button>
+          </motion.section>
+        )}
 
         {/* Reset */}
         <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="gradient-card rounded-xl p-4">
