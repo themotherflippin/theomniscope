@@ -28,8 +28,9 @@ export default function Admin() {
 
   const verifyPin = async () => {
     setPinError('');
+    const normalizedPin = pin.trim();
     const { data, error } = await supabase.functions.invoke('verify-admin-pin', {
-      body: { pin },
+      body: { pin: normalizedPin },
     });
     if (error || !data?.valid) {
       setPinError(t('admin.pinError'));
@@ -96,6 +97,10 @@ export default function Admin() {
                 value={pin}
                 onChange={e => setPin(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && verifyPin()}
+                autoComplete="one-time-code"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 className="pl-10 text-center font-mono"
               />
             </div>

@@ -21,7 +21,10 @@ serve(async (req) => {
       });
     }
 
-    const valid = pin === adminPin;
+    const submittedPin = String(pin ?? "").trim();
+    const expectedPin = adminPin.trim();
+    const valid = submittedPin.length > 0 && submittedPin === expectedPin;
+
     return new Response(JSON.stringify({ valid }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
