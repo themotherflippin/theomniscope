@@ -17,7 +17,7 @@ export interface UserPreferences {
 const DEFAULT_PREFS: UserPreferences = {
   mode: 'simple',
   riskProfile: 'standard',
-  chains: ['ethereum', 'solana', 'bsc', 'arbitrum', 'polygon', 'base'],
+  chains: ['ethereum', 'solana', 'bsc', 'arbitrum', 'polygon', 'base', 'cronos'],
   alertTypes: ['signal', 'risk'],
   onboardingComplete: false,
   theme: 'light',
