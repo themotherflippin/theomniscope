@@ -9,6 +9,7 @@ import { Disclaimer } from '@/components/Disclaimer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { estimateSlippage, estimatePriceImpact } from '@/lib/opportunityScorer';
+import { useI18n } from '@/lib/i18n';
 import {
   formatPrice, formatPct, formatNumber, shortenAddress, chainLabel,
 } from '@/lib/formatters';
@@ -20,15 +21,16 @@ export default function TokenDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tokens, signals, risks, smartMoneySignals, getWhosBuying, oppScores } = useMarketData();
+  const { t } = useI18n();
 
-  const token = tokens.find(t => t.id === id);
+  const token = tokens.find(tk => tk.id === id);
   if (!token) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground">Token not found</p>
+          <p className="text-muted-foreground">{t('token.notFound')}</p>
           <Button variant="ghost" className="mt-4" onClick={() => navigate('/')}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back
+            <ArrowLeft className="w-4 h-4 mr-2" /> {t('token.back')}
           </Button>
         </div>
       </div>
@@ -88,7 +90,6 @@ export default function TokenDetail() {
       </header>
 
       <main className="p-4 space-y-4">
-        {/* Price + Chart */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="gradient-card-elevated rounded-xl p-4">
           <div className="flex items-baseline gap-3 mb-4">
             <span className="text-2xl font-bold font-mono text-foreground tabular-nums">{formatPrice(token.price)}</span>
@@ -102,7 +103,6 @@ export default function TokenDetail() {
           <MiniChart basePrice={token.price} height={200} positive={positive} />
         </motion.div>
 
-        {/* Execution Warning */}
         {slippage1k > 0.5 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}
@@ -110,7 +110,7 @@ export default function TokenDetail() {
           >
             <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
             <div className="text-[11px] space-y-0.5">
-              <p className="text-warning font-medium">Execution Warning</p>
+              <p className="text-warning font-medium">{t('token.executionWarning')}</p>
               <p className="text-warning/70">
                 $1K order → {slippage1k.toFixed(2)}% slippage, {impact1k.toFixed(3)}% price impact
               </p>
@@ -121,10 +121,9 @@ export default function TokenDetail() {
           </motion.div>
         )}
 
-        {/* Metrics + Indicators */}
         <div className="grid grid-cols-2 gap-3">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="gradient-card rounded-xl p-3">
-            <h3 className="text-[10px] font-display text-muted-foreground mb-2 uppercase tracking-wider">Metrics</h3>
+            <h3 className="text-[10px] font-display text-muted-foreground mb-2 uppercase tracking-wider">{t('token.metrics')}</h3>
             <div className="space-y-2">
               {[
                 { icon: BarChart3, label: 'Vol 24h', value: formatNumber(token.volume24h) },
@@ -144,7 +143,7 @@ export default function TokenDetail() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="gradient-card rounded-xl p-3">
-            <h3 className="text-[10px] font-display text-muted-foreground mb-2 uppercase tracking-wider">Indicators</h3>
+            <h3 className="text-[10px] font-display text-muted-foreground mb-2 uppercase tracking-wider">{t('token.indicators')}</h3>
             <div className="space-y-2">
               {[
                 { label: 'RSI', value: token.rsi.toFixed(0), warn: token.rsi > 70 || token.rsi < 30 },
@@ -162,14 +161,12 @@ export default function TokenDetail() {
           </motion.div>
         </div>
 
-        {/* Risk Scanner */}
         {risk && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             <RiskPanel token={token} risk={risk} />
           </motion.div>
         )}
 
-        {/* Smart Money */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <SmartMoneyPanel
             whosBuying={whosBuying}
@@ -178,19 +175,17 @@ export default function TokenDetail() {
           />
         </motion.div>
 
-        {/* Signals */}
         {tokenSignals.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="space-y-3">
             <h2 className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">
-              Signals ({tokenSignals.length})
+              {t('token.signals')} ({tokenSignals.length})
             </h2>
             {tokenSignals.map(sig => (<SignalCard key={sig.id} signal={sig} />))}
           </motion.div>
         )}
 
-        {/* On-chain Activity */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="gradient-card rounded-xl p-4">
-          <h3 className="text-[10px] font-display text-muted-foreground mb-3 uppercase tracking-wider">On-chain Activity</h3>
+          <h3 className="text-[10px] font-display text-muted-foreground mb-3 uppercase tracking-wider">{t('token.onChain')}</h3>
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">
               <p className="text-lg font-mono font-bold text-foreground tabular-nums">{token.txCount24h.toLocaleString()}</p>
@@ -198,11 +193,11 @@ export default function TokenDetail() {
             </div>
             <div className="text-center">
               <p className="text-lg font-mono font-bold text-success tabular-nums">{token.buyCount.toLocaleString()}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Buys</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{t('token.buys')}</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-mono font-bold text-danger tabular-nums">{token.sellCount.toLocaleString()}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Sells</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{t('token.sells')}</p>
             </div>
           </div>
           <div className="mt-3 h-2 rounded-full overflow-hidden flex bg-muted">
@@ -210,8 +205,8 @@ export default function TokenDetail() {
             <div className="h-full rounded-r-full bg-danger/80" style={{ width: `${(token.sellCount / (token.buyCount + token.sellCount)) * 100}%` }} />
           </div>
           <div className="flex justify-between mt-1 text-[10px] text-muted-foreground font-mono">
-            <span>Buy pressure</span>
-            <span>Sell pressure</span>
+            <span>{t('token.buyPressure')}</span>
+            <span>{t('token.sellPressure')}</span>
           </div>
         </motion.div>
 

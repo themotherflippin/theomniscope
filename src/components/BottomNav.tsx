@@ -1,14 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Radar, Zap, Star, Bell, User } from 'lucide-react';
-
-const tabs = [
-  { path: '/', label: 'Radar', icon: Radar },
-  { path: '/opportunities', label: 'Signals', icon: Zap },
-  { path: '/watchlists', label: 'Watch', icon: Star },
-  { path: '/alerts', label: 'Alerts', icon: Bell },
-  { path: '/profile', label: 'Profile', icon: User },
-];
+import { useI18n } from '@/lib/i18n';
 
 interface BottomNavProps {
   unreadAlerts?: number;
@@ -17,6 +10,15 @@ interface BottomNavProps {
 export function BottomNav({ unreadAlerts = 0 }: BottomNavProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useI18n();
+
+  const tabs = [
+    { path: '/', label: t('nav.radar'), icon: Radar },
+    { path: '/opportunities', label: t('nav.signals'), icon: Zap },
+    { path: '/watchlists', label: t('nav.watch'), icon: Star },
+    { path: '/alerts', label: t('nav.alerts'), icon: Bell },
+    { path: '/profile', label: t('nav.profile'), icon: User },
+  ];
 
   if (location.pathname.startsWith('/token/')) return null;
 

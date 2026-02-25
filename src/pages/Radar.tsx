@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatPrice, formatPct } from '@/lib/formatters';
+import { useI18n } from '@/lib/i18n';
 import type { UserPreferences } from '@/lib/userPreferences';
 import type { Chain } from '@/lib/types';
 import {
@@ -31,6 +32,7 @@ export default function Radar({ prefs }: RadarProps) {
   const [search, setSearch] = useState('');
   const [chainFilter, setChainFilter] = useState<QuickFilter>('all');
   const [showBrief, setShowBrief] = useState(false);
+  const { t } = useI18n();
 
   const filtered = tokens.filter(t => {
     if (search && !t.symbol.toLowerCase().includes(search.toLowerCase()) && !t.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -42,8 +44,8 @@ export default function Radar({ prefs }: RadarProps) {
   const topGainers = [...filtered].sort((a, b) => b.priceChange1h - a.priceChange1h).slice(0, 5);
   const topLosers = [...filtered].sort((a, b) => a.priceChange1h - b.priceChange1h).slice(0, 5);
   const newTokens = [...filtered].sort((a, b) => a.ageHours - b.ageHours).slice(0, 5);
-  const highRisk = filtered.filter(t => {
-    const r = risks.get(t.id);
+  const highRisk = filtered.filter(tk => {
+    const r = risks.get(tk.id);
     return r && r.score >= 50;
   }).sort((a, b) => (risks.get(b.id)?.score || 0) - (risks.get(a.id)?.score || 0)).slice(0, 5);
 
@@ -51,19 +53,18 @@ export default function Radar({ prefs }: RadarProps) {
 
   return (
     <div>
-      {/* Header */}
       <header className="sticky top-0 z-40 glass-strong border-b border-border/50 px-4 py-3">
         <div className="flex items-center gap-2 mb-3">
           <div className="flex items-center gap-2 flex-1">
             <Activity className="w-4 h-4 text-primary" />
-            <h1 className="text-base font-display font-bold text-foreground tracking-tight">Radar</h1>
+            <h1 className="text-base font-display font-bold text-foreground tracking-tight">{t('radar.title')}</h1>
           </div>
           <button
             onClick={() => setShowBrief(true)}
             className="flex items-center gap-1 px-2 py-1 rounded-lg bg-warning/10 text-warning text-[10px] font-medium border border-warning/15 hover:bg-warning/15 transition-colors"
           >
             <Sun className="w-3 h-3" />
-            Brief
+            {t('radar.brief')}
           </button>
           <Badge variant="outline" className="text-[9px] font-mono border-primary/20 text-primary animate-pulse-glow px-2">
             ● LIVE
@@ -73,7 +74,7 @@ export default function Radar({ prefs }: RadarProps) {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search symbol or address..."
+              placeholder={t('radar.search')}
               className="pl-9 h-9 text-sm bg-secondary/50 border-border/50 focus:border-primary/30"
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -96,109 +97,103 @@ export default function Radar({ prefs }: RadarProps) {
                   : 'bg-secondary/50 text-muted-foreground border border-transparent hover:text-foreground/70'
               }`}
             >
-              {f === 'all' ? 'All Chains' : f.toUpperCase()}
+              {f === 'all' ? t('radar.allChains') : f.toUpperCase()}
             </button>
           ))}
         </div>
       </header>
 
       <main className="px-4 py-4 space-y-6">
-        {/* Top Gainers */}
         <section>
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-success" />
-            <h2 className="text-sm font-display font-semibold text-foreground">Top Gainers</h2>
+            <h2 className="text-sm font-display font-semibold text-foreground">{t('radar.topGainers')}</h2>
             <span className="text-[10px] text-muted-foreground font-mono ml-auto">1h</span>
           </div>
           <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1">
-            {topGainers.map((t, i) => (
+            {topGainers.map((tk, i) => (
               <motion.button
-                key={t.id}
+                key={tk.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                onClick={() => navigate(`/token/${t.id}`)}
+                onClick={() => navigate(`/token/${tk.id}`)}
                 className="gradient-card rounded-xl p-3 min-w-[130px] flex-shrink-0 text-left active:scale-95 transition-transform"
               >
-                <p className="font-bold text-foreground text-sm">{t.symbol}</p>
-                <p className="font-mono text-xs text-foreground mt-1 tabular-nums">{formatPrice(t.price)}</p>
-                <p className="font-mono text-xs text-success mt-0.5 tabular-nums">{formatPct(t.priceChange1h)}</p>
+                <p className="font-bold text-foreground text-sm">{tk.symbol}</p>
+                <p className="font-mono text-xs text-foreground mt-1 tabular-nums">{formatPrice(tk.price)}</p>
+                <p className="font-mono text-xs text-success mt-0.5 tabular-nums">{formatPct(tk.priceChange1h)}</p>
               </motion.button>
             ))}
           </div>
         </section>
 
-        {/* Top Losers */}
         <section>
           <div className="flex items-center gap-2 mb-3">
             <TrendingDown className="w-4 h-4 text-danger" />
-            <h2 className="text-sm font-display font-semibold text-foreground">Top Losers</h2>
+            <h2 className="text-sm font-display font-semibold text-foreground">{t('radar.topLosers')}</h2>
             <span className="text-[10px] text-muted-foreground font-mono ml-auto">1h</span>
           </div>
           <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1">
-            {topLosers.map((t, i) => (
+            {topLosers.map((tk, i) => (
               <motion.button
-                key={t.id}
+                key={tk.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                onClick={() => navigate(`/token/${t.id}`)}
+                onClick={() => navigate(`/token/${tk.id}`)}
                 className="gradient-card rounded-xl p-3 min-w-[130px] flex-shrink-0 text-left active:scale-95 transition-transform"
               >
-                <p className="font-bold text-foreground text-sm">{t.symbol}</p>
-                <p className="font-mono text-xs text-foreground mt-1 tabular-nums">{formatPrice(t.price)}</p>
-                <p className="font-mono text-xs text-danger mt-0.5 tabular-nums">{formatPct(t.priceChange1h)}</p>
+                <p className="font-bold text-foreground text-sm">{tk.symbol}</p>
+                <p className="font-mono text-xs text-foreground mt-1 tabular-nums">{formatPrice(tk.price)}</p>
+                <p className="font-mono text-xs text-danger mt-0.5 tabular-nums">{formatPct(tk.priceChange1h)}</p>
               </motion.button>
             ))}
           </div>
         </section>
 
-        {/* New Listings */}
         <section>
           <div className="flex items-center gap-2 mb-3">
             <Flame className="w-4 h-4 text-warning" />
-            <h2 className="text-sm font-display font-semibold text-foreground">New Listings</h2>
+            <h2 className="text-sm font-display font-semibold text-foreground">{t('radar.newListings')}</h2>
           </div>
           <div className="gradient-card rounded-xl overflow-hidden">
-            {newTokens.map(t => (
-              <TokenCard key={t.id} token={t} risk={risks.get(t.id)} onSelect={() => navigate(`/token/${t.id}`)} compact />
+            {newTokens.map(tk => (
+              <TokenCard key={tk.id} token={tk} risk={risks.get(tk.id)} onSelect={() => navigate(`/token/${tk.id}`)} compact />
             ))}
           </div>
         </section>
 
-        {/* Danger Zone */}
         {highRisk.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-3">
               <ShieldAlert className="w-4 h-4 text-danger" />
-              <h2 className="text-sm font-display font-semibold text-foreground">Danger Zone</h2>
+              <h2 className="text-sm font-display font-semibold text-foreground">{t('radar.dangerZone')}</h2>
             </div>
             <div className="gradient-card rounded-xl overflow-hidden border-danger/10">
-              {highRisk.map(t => (
-                <TokenCard key={t.id} token={t} risk={risks.get(t.id)} onSelect={() => navigate(`/token/${t.id}`)} compact />
+              {highRisk.map(tk => (
+                <TokenCard key={tk.id} token={tk} risk={risks.get(tk.id)} onSelect={() => navigate(`/token/${tk.id}`)} compact />
               ))}
             </div>
           </section>
         )}
 
-        {/* All tokens */}
         <section>
           <h2 className="text-sm font-display font-semibold text-foreground mb-3">
-            All Tokens <span className="text-muted-foreground font-mono text-xs">({filtered.length})</span>
+            {t('radar.allTokens')} <span className="text-muted-foreground font-mono text-xs">({filtered.length})</span>
           </h2>
           {isMobile ? (
             <div className="space-y-2.5">
-              {filtered.map(t => (
-                <TokenCard key={t.id} token={t} risk={risks.get(t.id)} onSelect={() => navigate(`/token/${t.id}`)} showChain={isPro} />
+              {filtered.map(tk => (
+                <TokenCard key={tk.id} token={tk} risk={risks.get(tk.id)} onSelect={() => navigate(`/token/${tk.id}`)} showChain={isPro} />
               ))}
             </div>
           ) : (
-            <TokenTable tokens={filtered} risks={risks} onSelect={t => navigate(`/token/${t.id}`)} />
+            <TokenTable tokens={filtered} risks={risks} onSelect={tk => navigate(`/token/${tk.id}`)} />
           )}
         </section>
       </main>
 
-      {/* Daily Brief Modal */}
       <AnimatePresence>
         {showBrief && (
           <DailyBrief

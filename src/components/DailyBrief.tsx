@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { DailyBrief as DailyBriefType } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { X, Sun, TrendingUp, ShieldAlert, Wallet, ArrowRight } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
+import { X, Sun, TrendingUp, ShieldAlert, ArrowRight } from 'lucide-react';
 
 interface DailyBriefProps {
   brief: DailyBriefType;
@@ -19,6 +19,7 @@ const sentimentConfig = {
 
 export function DailyBrief({ brief, onClose, onSelectToken }: DailyBriefProps) {
   const sentCfg = sentimentConfig[brief.marketSentiment];
+  const { t } = useI18n();
 
   return (
     <motion.div
@@ -35,11 +36,10 @@ export function DailyBrief({ brief, onClose, onSelectToken }: DailyBriefProps) {
         onClick={e => e.stopPropagation()}
         className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-card border border-border/50 rounded-t-2xl sm:rounded-2xl"
       >
-        {/* Header */}
         <div className="sticky top-0 z-10 glass-strong border-b border-border/30 px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sun className="w-5 h-5 text-warning" />
-            <h2 className="text-base font-display font-bold text-foreground">Daily Brief</h2>
+            <h2 className="text-base font-display font-bold text-foreground">{t('brief.title')}</h2>
           </div>
           <Button variant="ghost" size="icon" className="w-8 h-8" onClick={onClose}>
             <X className="w-4 h-4" />
@@ -47,7 +47,6 @@ export function DailyBrief({ brief, onClose, onSelectToken }: DailyBriefProps) {
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Market sentiment */}
           <div className="flex items-center gap-3">
             <Badge className={`${sentCfg.bg} ${sentCfg.color} border-none text-xs font-mono`}>
               {sentCfg.label}
@@ -55,16 +54,15 @@ export function DailyBrief({ brief, onClose, onSelectToken }: DailyBriefProps) {
             <span className="text-xs text-muted-foreground">{brief.smartMoneyTrend}</span>
           </div>
 
-          {/* Top Opportunities */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4 text-success" />
-              <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Top Opportunities</h3>
+              <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">{t('brief.topOpps')}</h3>
             </div>
             {brief.topOpportunities.length === 0 ? (
               <div className="p-4 rounded-lg bg-secondary/30 text-center">
-                <p className="text-[11px] text-muted-foreground">No strong opportunities right now.</p>
-                <p className="text-[10px] text-muted-foreground/50 mt-1">Market conditions may not favor entries — patience is a strategy.</p>
+                <p className="text-[11px] text-muted-foreground">{t('brief.noOpps')}</p>
+                <p className="text-[10px] text-muted-foreground/50 mt-1">{t('brief.noOppsHint')}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -96,15 +94,14 @@ export function DailyBrief({ brief, onClose, onSelectToken }: DailyBriefProps) {
             )}
           </div>
 
-          {/* Top Dangers */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <ShieldAlert className="w-4 h-4 text-danger" />
-              <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Top Dangers</h3>
+              <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">{t('brief.topDangers')}</h3>
             </div>
             {brief.topDangers.length === 0 ? (
               <div className="p-4 rounded-lg bg-success/5 text-center">
-                <p className="text-[11px] text-success/80">All monitored tokens within acceptable risk.</p>
+                <p className="text-[11px] text-success/80">{t('brief.allSafe')}</p>
               </div>
             ) : (
               <div className="space-y-2">

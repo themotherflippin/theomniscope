@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import type { Token, RiskReport } from '@/lib/types';
 import { RiskBadge } from './RiskBadge';
+import { useI18n } from '@/lib/i18n';
 import { ShieldAlert } from 'lucide-react';
 
 interface RiskPanelProps {
@@ -11,6 +12,7 @@ interface RiskPanelProps {
 export function RiskPanel({ risk }: RiskPanelProps) {
   const severityOrder = { critical: 0, danger: 1, warning: 2, info: 3 };
   const sorted = [...risk.flags].sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+  const { t } = useI18n();
 
   return (
     <div className="gradient-card-elevated rounded-xl p-4">
@@ -19,12 +21,11 @@ export function RiskPanel({ risk }: RiskPanelProps) {
           <div className="w-7 h-7 rounded-lg bg-secondary/50 flex items-center justify-center">
             <ShieldAlert className="w-4 h-4 text-muted-foreground" />
           </div>
-          <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Risk Scanner</h3>
+          <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">{t('token.riskScanner')}</h3>
         </div>
         <RiskBadge score={risk.score} level={risk.level} />
       </div>
 
-      {/* Risk meter */}
       <div className="mb-4">
         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
           <motion.div
@@ -44,8 +45,8 @@ export function RiskPanel({ risk }: RiskPanelProps) {
           />
         </div>
         <div className="flex justify-between mt-1 text-[9px] text-muted-foreground/50 font-mono">
-          <span>Safe</span>
-          <span>Critical</span>
+          <span>{t('token.safe')}</span>
+          <span>{t('token.critical')}</span>
         </div>
       </div>
 

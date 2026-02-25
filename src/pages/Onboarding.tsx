@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Chain } from '@/lib/types';
 import type { UserMode, RiskProfile, UserPreferences } from '@/lib/userPreferences';
+import { useI18n } from '@/lib/i18n';
 import {
   Zap, Shield, Eye, Gauge,
   ChevronRight, ChevronLeft,
@@ -35,6 +36,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [risk, setRisk] = useState<RiskProfile>('standard');
   const [selectedChains, setSelectedChains] = useState<Chain[]>(['ethereum', 'bsc', 'arbitrum', 'polygon', 'base']);
   const [alertTypes, setAlertTypes] = useState<string[]>(['signal', 'risk']);
+  const { t } = useI18n();
 
   const toggleChain = (c: Chain) => {
     setSelectedChains(prev =>
@@ -75,8 +77,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       </div>
       <div className="grid gap-3">
         {([
-          { id: 'simple' as UserMode, label: 'Simple', desc: 'Clean signals, intuitive interface. Perfect to start.', icon: Eye, badge: 'Recommended' },
-          { id: 'pro' as UserMode, label: 'Pro', desc: 'All data, technical indicators, detailed risk scanner.', icon: Gauge, badge: null },
+          { id: 'simple' as UserMode, label: t('onboarding.simple'), desc: t('onboarding.simpleDesc'), icon: Eye, badge: t('onboarding.recommended') },
+          { id: 'pro' as UserMode, label: t('onboarding.pro'), desc: t('onboarding.proDesc'), icon: Gauge, badge: null },
         ]).map(m => (
           <motion.button
             key={m.id}
@@ -107,14 +109,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
           <Shield className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-xl font-display font-bold text-foreground">Risk Profile</h2>
-        <p className="text-sm text-muted-foreground">Filters signals based on your tolerance</p>
+        <h2 className="text-xl font-display font-bold text-foreground">{t('onboarding.riskTitle')}</h2>
+        <p className="text-sm text-muted-foreground">{t('onboarding.riskSubtitle')}</p>
       </div>
       <div className="grid gap-3">
         {([
-          { id: 'conservative' as RiskProfile, label: 'Conservative', desc: 'High confidence only. Established tokens, low risk.', icon: Shield, color: 'text-success' },
-          { id: 'standard' as RiskProfile, label: 'Standard', desc: 'Balanced risk/reward. Medium to high confidence signals.', icon: Zap, color: 'text-primary' },
-          { id: 'aggressive' as RiskProfile, label: 'Aggressive', desc: 'All signals including high risk. For experienced traders.', icon: TrendingUp, color: 'text-warning' },
+          { id: 'conservative' as RiskProfile, label: t('onboarding.conservative'), desc: t('onboarding.conservativeDesc'), icon: Shield, color: 'text-success' },
+          { id: 'standard' as RiskProfile, label: t('onboarding.standard'), desc: t('onboarding.standardDesc'), icon: Zap, color: 'text-primary' },
+          { id: 'aggressive' as RiskProfile, label: t('onboarding.aggressive'), desc: t('onboarding.aggressiveDesc'), icon: TrendingUp, color: 'text-warning' },
         ]).map(r => (
           <motion.button
             key={r.id}
@@ -142,8 +144,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
           <BarChart3 className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-xl font-display font-bold text-foreground">Chains</h2>
-        <p className="text-sm text-muted-foreground">Select blockchains to monitor</p>
+        <h2 className="text-xl font-display font-bold text-foreground">{t('onboarding.chainsTitle')}</h2>
+        <p className="text-sm text-muted-foreground">{t('onboarding.chainsSubtitle')}</p>
       </div>
       <div className="grid gap-2.5">
         {chains.map(c => (
@@ -179,15 +181,15 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
           <Bell className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-xl font-display font-bold text-foreground">Alerts</h2>
-        <p className="text-sm text-muted-foreground">Choose what triggers notifications</p>
+        <h2 className="text-xl font-display font-bold text-foreground">{t('onboarding.alertsTitle')}</h2>
+        <p className="text-sm text-muted-foreground">{t('onboarding.alertsSubtitle')}</p>
       </div>
       <div className="grid gap-2.5">
         {([
-          { id: 'price', label: 'Price', desc: 'Alert when price crosses a threshold', icon: TrendingUp },
-          { id: 'volume', label: 'Volume', desc: 'Volume spikes or unusual transactions', icon: BarChart3 },
-          { id: 'signal', label: 'Signals', desc: 'New Entry / Exit / Avoid signals', icon: Zap },
-          { id: 'risk', label: 'Risk', desc: 'Risk score changes', icon: ShieldAlert },
+          { id: 'price', label: t('onboarding.price'), desc: t('onboarding.priceDesc'), icon: TrendingUp },
+          { id: 'volume', label: t('onboarding.volume'), desc: t('onboarding.volumeDesc'), icon: BarChart3 },
+          { id: 'signal', label: t('onboarding.signals'), desc: t('onboarding.signalsDesc'), icon: Zap },
+          { id: 'risk', label: t('onboarding.risk'), desc: t('onboarding.riskDesc'), icon: ShieldAlert },
         ]).map(a => (
           <motion.button
             key={a.id}
@@ -221,7 +223,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   return (
     <div className="min-h-screen bg-background gradient-hero flex flex-col">
-      {/* Progress */}
       <div className="px-6 pt-6 pb-2">
         <div className="flex gap-1.5">
           {[0, 1, 2, 3].map(i => (
@@ -240,7 +241,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         </p>
       </div>
 
-      {/* Content */}
       <div className="flex-1 px-6 py-4 max-w-md mx-auto w-full">
         <AnimatePresence mode="wait">
           <motion.div
@@ -256,7 +256,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         </AnimatePresence>
       </div>
 
-      {/* Navigation */}
       <div className="px-6 pb-8 pt-4 flex gap-3 max-w-md mx-auto w-full">
         {step > 0 && (
           <Button
@@ -265,7 +264,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             onClick={() => setStep(s => s - 1)}
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
-            Back
+            {t('onboarding.back')}
           </Button>
         )}
         {step < 3 ? (
@@ -273,7 +272,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => setStep(s => s + 1)}
           >
-            Continue
+            {t('onboarding.continue')}
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         ) : (
@@ -282,7 +281,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             onClick={finish}
           >
             <Zap className="w-4 h-4 mr-1" />
-            Launch ORACLE
+            {t('onboarding.launch')}
           </Button>
         )}
       </div>

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { Lock, Plus, Copy, Check, Trash2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '@/lib/i18n';
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -23,6 +24,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const verifyPin = async () => {
     setPinError('');
@@ -30,14 +32,13 @@ export default function Admin() {
       body: { pin },
     });
     if (error || !data?.valid) {
-      setPinError('PIN incorrect');
+      setPinError(t('admin.pinError'));
       return;
     }
     setAuthenticated(true);
     localStorage.setItem('oracle_admin_session', Date.now().toString());
   };
 
-  // Check recent session
   useEffect(() => {
     const session = localStorage.getItem('oracle_admin_session');
     if (session && Date.now() - parseInt(session) < 3600000) {
@@ -85,13 +86,13 @@ export default function Admin() {
           className="w-full max-w-sm space-y-6 text-center"
         >
           <img src={oracleLogo} alt="Oracle" className="w-20 h-20 mx-auto object-contain" />
-          <h1 className="text-xl font-display font-bold text-foreground">Admin ORACLE</h1>
+          <h1 className="text-xl font-display font-bold text-foreground">{t('admin.title')}</h1>
           <div className="space-y-3">
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="password"
-                placeholder="PIN Admin"
+                placeholder={t('admin.pinPlaceholder')}
                 value={pin}
                 onChange={e => setPin(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && verifyPin()}
@@ -100,7 +101,7 @@ export default function Admin() {
             </div>
             {pinError && <p className="text-sm text-danger">{pinError}</p>}
             <Button className="w-full" onClick={verifyPin} disabled={!pin}>
-              Accéder
+              {t('admin.access')}
             </Button>
           </div>
         </motion.div>
@@ -114,13 +115,13 @@ export default function Admin() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-lg font-display font-bold text-foreground">Codes d'invitation</h1>
+        <h1 className="text-lg font-display font-bold text-foreground">{t('admin.invitationCodes')}</h1>
         <div className="w-10" />
       </div>
 
       <Button className="w-full mb-6 gap-2" onClick={createCode} disabled={loading}>
         <Plus className="w-4 h-4" />
-        Générer un code
+        {t('admin.generate')}
       </Button>
 
       <div className="space-y-2">
@@ -141,26 +142,12 @@ export default function Admin() {
                   : 'bg-muted text-muted-foreground border-border text-[10px]'
               }
             >
-              {c.is_used ? 'Utilisé' : 'Disponible'}
+              {c.is_used ? t('admin.used') : t('admin.available')}
             </Badge>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => copyCode(c.code, c.id)}
-            >
-              {copiedId === c.id ? (
-                <Check className="w-4 h-4 text-success" />
-              ) : (
-                <Copy className="w-4 h-4 text-muted-foreground" />
-              )}
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyCode(c.code, c.id)}>
+              {copiedId === c.id ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => deleteCode(c.id)}
-            >
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteCode(c.id)}>
               <Trash2 className="w-4 h-4 text-danger" />
             </Button>
           </motion.div>
@@ -168,7 +155,7 @@ export default function Admin() {
 
         {codes.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-8">
-            Aucun code créé. Cliquez sur "Générer un code" pour commencer.
+            {t('admin.noCodes')}
           </p>
         )}
       </div>

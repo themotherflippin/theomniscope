@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useUserPreferences } from "@/lib/userPreferences";
 import { useMarketData } from "@/hooks/useMarketData";
 import { AppShell } from "@/components/AppShell";
+import { I18nProvider } from "@/lib/i18n";
 import InvitationGate from "@/components/InvitationGate";
 import Onboarding from "@/pages/Onboarding";
 import Radar from "@/pages/Radar";
@@ -25,8 +26,6 @@ function AppContent() {
   const { unreadAlerts } = useMarketData();
   const [hasAccess, setHasAccess] = useState(false);
 
-  // Admin route is always accessible (has its own PIN protection)
-  // Everything else requires an invitation code first
   return (
     <BrowserRouter>
       <Routes>
@@ -61,9 +60,11 @@ function AppContent() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AppContent />
+      <I18nProvider>
+        <Toaster />
+        <Sonner />
+        <AppContent />
+      </I18nProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

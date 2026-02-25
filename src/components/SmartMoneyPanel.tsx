@@ -2,7 +2,8 @@ import { motion } from 'framer-motion';
 import type { SmartMoneySignal, WhosBuying } from '@/lib/types';
 import { shortenAddress } from '@/lib/formatters';
 import { Badge } from '@/components/ui/badge';
-import { Users, TrendingUp, TrendingDown, ArrowRight, Wallet } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
+import { Wallet } from 'lucide-react';
 
 interface SmartMoneyPanelProps {
   whosBuying: WhosBuying;
@@ -19,6 +20,7 @@ const typeConfig = {
 
 export function SmartMoneyPanel({ whosBuying, signals, tokenId }: SmartMoneyPanelProps) {
   const tokenSignals = signals.filter(s => s.tokenId === tokenId);
+  const { t } = useI18n();
 
   return (
     <div className="gradient-card-elevated rounded-xl p-4 space-y-4">
@@ -26,31 +28,29 @@ export function SmartMoneyPanel({ whosBuying, signals, tokenId }: SmartMoneyPane
         <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
           <Wallet className="w-4 h-4 text-primary" />
         </div>
-        <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Who's Buying</h3>
+        <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">{t('token.whosBuying')}</h3>
       </div>
 
-      {/* Flow summary */}
       <div className="grid grid-cols-3 gap-3">
         <div className="text-center p-2 rounded-lg bg-secondary/30">
           <p className={`text-sm font-mono font-bold ${whosBuying.totalSmartMoneyFlow >= 0 ? 'text-success' : 'text-danger'}`}>
             ${Math.abs(whosBuying.totalSmartMoneyFlow / 1000).toFixed(0)}K
           </p>
-          <p className="text-[9px] text-muted-foreground mt-0.5">Net Flow</p>
+          <p className="text-[9px] text-muted-foreground mt-0.5">{t('token.netFlow')}</p>
         </div>
         <div className="text-center p-2 rounded-lg bg-secondary/30">
           <p className="text-sm font-mono font-bold text-foreground">{whosBuying.winnerWallets}</p>
-          <p className="text-[9px] text-muted-foreground mt-0.5">Winner Wallets</p>
+          <p className="text-[9px] text-muted-foreground mt-0.5">{t('token.winnerWallets')}</p>
         </div>
         <div className="text-center p-2 rounded-lg bg-secondary/30">
           <p className="text-sm font-mono font-bold text-foreground">{whosBuying.newWallets}</p>
-          <p className="text-[9px] text-muted-foreground mt-0.5">New Wallets</p>
+          <p className="text-[9px] text-muted-foreground mt-0.5">{t('token.newWallets')}</p>
         </div>
       </div>
 
-      {/* Top buyers */}
       {whosBuying.topBuyers.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Top Net Buyers</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('token.topNetBuyers')}</p>
           {whosBuying.topBuyers.map((b, i) => (
             <motion.div
               key={b.wallet.address}
@@ -77,10 +77,9 @@ export function SmartMoneyPanel({ whosBuying, signals, tokenId }: SmartMoneyPane
         </div>
       )}
 
-      {/* Smart money signals for this token */}
       {tokenSignals.length > 0 && (
         <div className="space-y-1.5 pt-2 border-t border-border/30">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Smart Money Signals</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('token.smartMoneySignals')}</p>
           {tokenSignals.map(s => {
             const cfg = typeConfig[s.type];
             return (
@@ -95,7 +94,7 @@ export function SmartMoneyPanel({ whosBuying, signals, tokenId }: SmartMoneyPane
 
       {whosBuying.topBuyers.length === 0 && tokenSignals.length === 0 && (
         <p className="text-[11px] text-muted-foreground/50 text-center py-4">
-          No smart money activity detected for this token.
+          {t('token.noSmartMoney')}
         </p>
       )}
     </div>

@@ -6,27 +6,7 @@ import oracleLogo from '@/assets/oracle-logo.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lock, Loader2 } from 'lucide-react';
-
-type Lang = 'fr' | 'en';
-
-const translations = {
-  fr: {
-    subtitle: 'Accès sur invitation uniquement',
-    placeholder: "Entrez votre code d'invitation",
-    submit: 'Accéder',
-    invalidCode: 'Code invalide.',
-    alreadyUsed: 'Ce code a déjà été utilisé.',
-    error: 'Erreur, réessayez.',
-  },
-  en: {
-    subtitle: 'Invitation only access',
-    placeholder: 'Enter your invitation code',
-    submit: 'Access',
-    invalidCode: 'Invalid code.',
-    alreadyUsed: 'This code has already been used.',
-    error: 'Error, please try again.',
-  },
-} as const;
+import { useI18n } from '@/lib/i18n';
 
 function getDeviceId(): string {
   let id = localStorage.getItem('oracle_device_id');
@@ -41,20 +21,9 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [lang, setLang] = useState<Lang>(() => {
-    return (localStorage.getItem('oracle_lang') as Lang) || 'en';
-  });
   const navigate = useNavigate();
-  const t = translations[lang];
+  const { t, lang, toggleLang } = useI18n();
 
-  const toggleLang = () => {
-    const next = lang === 'fr' ? 'en' : 'fr';
-    setLang(next);
-    localStorage.setItem('oracle_lang', next);
-    setError('');
-  };
-
-  // Check if this device already has access
   useEffect(() => {
     (async () => {
       const deviceId = getDeviceId();
@@ -87,7 +56,7 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
       .limit(1);
 
     if (!data || data.length === 0) {
-      setError(t.invalidCode);
+      setError(t('gate.invalidCode'));
       setLoading(false);
       return;
     }
@@ -100,7 +69,7 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
     }
 
     if (invitation.is_used && invitation.device_id !== deviceId) {
-      setError(t.alreadyUsed);
+      setError(t('gate.alreadyUsed'));
       setLoading(false);
       return;
     }
@@ -111,7 +80,7 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
       .eq('id', invitation.id);
 
     if (updateError) {
-      setError(t.error);
+      setError(t('gate.error'));
       setLoading(false);
       return;
     }
@@ -129,7 +98,6 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
 
   return (
     <div className="min-h-screen bg-background gradient-hero flex flex-col items-center justify-center px-6 relative">
-      {/* Language toggle */}
       <button
         onClick={toggleLang}
         className="absolute top-6 right-6 flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors bg-muted/50 backdrop-blur-sm rounded-full px-3 py-1.5 border border-border/50"
@@ -148,14 +116,14 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
         <div className="space-y-4">
           <img src={oracleLogo} alt="Oracle" className="w-64 h-64 mx-auto object-contain" />
           <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">ORACLE</h1>
-          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+          <p className="text-sm text-muted-foreground">{t('gate.subtitle')}</p>
         </div>
 
         <div className="space-y-3">
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder={t.placeholder}
+              placeholder={t('gate.placeholder')}
               value={code}
               onChange={e => setCode(e.target.value.toUpperCase())}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
@@ -179,11 +147,11 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
             onClick={handleSubmit}
             disabled={!code.trim()}
           >
-            {t.submit}
+            {t('gate.submit')}
           </Button>
         </div>
 
-        <p className="text-[11px] text-muted-foreground">by The Flippin' Labs</p>
+        <p className="text-[11px] text-muted-foreground">{t('gate.byLabs')}</p>
         <button
           onClick={() => navigate('/admin')}
           className="mt-2 text-[10px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
