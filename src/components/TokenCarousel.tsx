@@ -20,7 +20,7 @@ export function TokenCarousel({ tokens, variant }: TokenCarouselProps) {
           <button
             key={tk.id}
             onClick={() => navigate(`/token/${tk.id}`)}
-            className={`flex-[0_0_auto] flex items-center justify-between gap-3 px-3 py-2 rounded-xl border ${borderAccent} ${glowAccent} shadow-sm bg-card/70 backdrop-blur-sm active:scale-[0.98] transition-transform`}
+            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border ${borderAccent} ${glowAccent} shadow-sm bg-card/70 backdrop-blur-sm active:scale-[0.98] transition-transform`}
           >
             <div className="flex flex-col items-start min-w-0">
               <span className="font-bold text-foreground text-xs truncate">{tk.symbol}</span>
