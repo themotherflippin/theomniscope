@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import WalletActivityWidget from "@/components/WalletActivityWidget";
+import FullWalletScanner from "@/components/scanner/FullWalletScanner";
 
 export default function WalletDetail() {
   const { address } = useParams<{ address: string }>();
@@ -14,11 +14,13 @@ export default function WalletDetail() {
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <h1 className="text-base font-display font-bold text-foreground tracking-tight">Wallet Scanner</h1>
+          <h1 className="text-base font-display font-bold text-foreground tracking-tight">
+            Wallet Intelligence
+          </h1>
         </div>
       </header>
       <main className="px-4 py-4">
-        <WalletActivityWidget initialAddress={address} />
+        <FullWalletScanner initialAddress={address} />
       </main>
     </div>
   );

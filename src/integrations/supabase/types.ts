@@ -463,6 +463,184 @@ export type Database = {
           },
         ]
       }
+      wallet_counterparties: {
+        Row: {
+          address: string
+          bidirectional: boolean
+          created_at: string
+          first_seen: string | null
+          id: string
+          is_contract: boolean
+          label: string | null
+          last_seen: string | null
+          link_score: number
+          link_strength: string
+          scan_id: string
+          token_diversity: number
+          tx_count: number
+          volume_in: number
+          volume_out: number
+        }
+        Insert: {
+          address: string
+          bidirectional?: boolean
+          created_at?: string
+          first_seen?: string | null
+          id?: string
+          is_contract?: boolean
+          label?: string | null
+          last_seen?: string | null
+          link_score?: number
+          link_strength?: string
+          scan_id: string
+          token_diversity?: number
+          tx_count?: number
+          volume_in?: number
+          volume_out?: number
+        }
+        Update: {
+          address?: string
+          bidirectional?: boolean
+          created_at?: string
+          first_seen?: string | null
+          id?: string
+          is_contract?: boolean
+          label?: string | null
+          last_seen?: string | null
+          link_score?: number
+          link_strength?: string
+          scan_id?: string
+          token_diversity?: number
+          tx_count?: number
+          volume_in?: number
+          volume_out?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_counterparties_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_scans: {
+        Row: {
+          address: string
+          chain: string
+          contracts_count: number
+          counterparties_count: number
+          created_at: string
+          depth: number
+          error_message: string | null
+          first_seen: string | null
+          id: string
+          include_routers: boolean
+          last_seen: string | null
+          result: Json
+          status: string
+          total_tx_count: number
+          total_volume_in: number
+          total_volume_out: number
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          chain?: string
+          contracts_count?: number
+          counterparties_count?: number
+          created_at?: string
+          depth?: number
+          error_message?: string | null
+          first_seen?: string | null
+          id?: string
+          include_routers?: boolean
+          last_seen?: string | null
+          result?: Json
+          status?: string
+          total_tx_count?: number
+          total_volume_in?: number
+          total_volume_out?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          chain?: string
+          contracts_count?: number
+          counterparties_count?: number
+          created_at?: string
+          depth?: number
+          error_message?: string | null
+          first_seen?: string | null
+          id?: string
+          include_routers?: boolean
+          last_seen?: string | null
+          result?: Json
+          status?: string
+          total_tx_count?: number
+          total_volume_in?: number
+          total_volume_out?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wallet_tx_cache: {
+        Row: {
+          block_number: string | null
+          block_timestamp: string
+          created_at: string
+          direction: string
+          from_address: string
+          id: string
+          scan_id: string
+          to_address: string
+          token_address: string | null
+          token_symbol: string | null
+          token_value: number | null
+          tx_hash: string
+          value_native: number
+        }
+        Insert: {
+          block_number?: string | null
+          block_timestamp: string
+          created_at?: string
+          direction?: string
+          from_address: string
+          id?: string
+          scan_id: string
+          to_address: string
+          token_address?: string | null
+          token_symbol?: string | null
+          token_value?: number | null
+          tx_hash: string
+          value_native?: number
+        }
+        Update: {
+          block_number?: string | null
+          block_timestamp?: string
+          created_at?: string
+          direction?: string
+          from_address?: string
+          id?: string
+          scan_id?: string
+          to_address?: string
+          token_address?: string | null
+          token_symbol?: string | null
+          token_value?: number | null
+          tx_hash?: string
+          value_native?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_tx_cache_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       watchlists: {
         Row: {
           chain: string
