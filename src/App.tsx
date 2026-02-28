@@ -19,6 +19,7 @@ import TokenDetail from "@/pages/TokenDetail";
 import NewListings from "@/pages/NewListings";
 import Lookup from "@/pages/Lookup";
 import Admin from "@/pages/Admin";
+import CommandCenter from "@/pages/CommandCenter";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,7 +43,8 @@ function AppContent() {
             ) : (
               <Routes>
                 <Route element={<AppShell unreadAlerts={unreadAlerts} />}>
-                  <Route path="/" element={<Radar prefs={prefs} />} />
+                  <Route path="/" element={<CommandCenter />} />
+                  <Route path="/radar" element={<Radar prefs={prefs} />} />
                   <Route path="/new-listings" element={<NewListings />} />
                   <Route path="/lookup" element={<Lookup />} />
                   <Route path="/opportunities" element={<Opportunities prefs={prefs} />} />

@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Radar, Rocket, Eye, Zap, Bell, User } from 'lucide-react';
+import { LayoutDashboard, Radar, Eye, Zap, Bell, User } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
 interface BottomNavProps {
@@ -13,8 +13,8 @@ export function BottomNav({ unreadAlerts = 0 }: BottomNavProps) {
   const { t } = useI18n();
 
   const tabs = [
-    { path: '/', label: t('nav.radar'), icon: Radar },
-    { path: '/new-listings', label: t('nav.new'), icon: Rocket },
+    { path: '/', label: 'Center', icon: LayoutDashboard },
+    { path: '/radar', label: t('nav.radar'), icon: Radar },
     { path: '/lookup', label: t('nav.lookup'), icon: Eye },
     { path: '/opportunities', label: t('nav.signals'), icon: Zap },
     { path: '/alerts', label: t('nav.alerts'), icon: Bell },
