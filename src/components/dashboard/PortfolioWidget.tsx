@@ -115,7 +115,7 @@ export function PortfolioWidget() {
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
-            Tracked Mkt Cap
+            Market Cap · {tokens.length} tokens
           </p>
           <p className="text-base font-bold font-mono tabular-nums truncate">
             ${totalMarketCap >= 1e9

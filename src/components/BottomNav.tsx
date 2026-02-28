@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Search, Bell, FolderOpen, MoreHorizontal } from "lucide-react";
+import { LayoutDashboard, Search, FolderOpen, Compass } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { MoreSheet } from "@/components/MoreSheet";
 
@@ -18,7 +18,7 @@ export function BottomNav({ unreadAlerts = 0 }: BottomNavProps) {
   const tabs = [
     { path: "/", label: "Center", icon: LayoutDashboard },
     { path: "/lookup", label: "Investigate", icon: Search },
-    { path: "/server-alerts", label: "Alerts", icon: Bell },
+    { id: "hub", label: "Hub", icon: Compass },
     { path: "/cases", label: "Cases", icon: FolderOpen },
   ];
 
@@ -29,31 +29,24 @@ export function BottomNav({ unreadAlerts = 0 }: BottomNavProps) {
       <nav className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border/50 safe-area-bottom">
         <div className="flex items-center justify-around max-w-lg mx-auto">
           {tabs.map((tab) => {
-            const isActive =
-              tab.path === "/"
+            const isHub = 'id' in tab && tab.id === "hub";
+            const isActive = isHub
+              ? false
+              : tab.path === "/"
                 ? location.pathname === "/"
-                : location.pathname.startsWith(tab.path);
+                : location.pathname.startsWith(tab.path!);
             const Icon = tab.icon;
 
             return (
               <button
-                key={tab.path}
-                onClick={() => navigate(tab.path)}
+                key={isHub ? "hub" : tab.path}
+                onClick={() => isHub ? setMoreOpen(true) : navigate(tab.path!)}
                 className={`flex flex-col items-center gap-0.5 py-2.5 px-3 min-w-[56px] transition-all relative ${
                   isActive ? "text-primary" : "text-muted-foreground hover:text-foreground/70"
                 }`}
               >
                 <div className="relative">
                   <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.5} />
-                  {tab.path === "/server-alerts" && unreadAlerts > 0 && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute -top-1 -right-2 w-4 h-4 rounded-full bg-danger text-[9px] font-bold flex items-center justify-center text-danger-foreground"
-                    >
-                      {unreadAlerts > 9 ? "9+" : unreadAlerts}
-                    </motion.span>
-                  )}
                 </div>
                 <span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                 {isActive && (
@@ -66,15 +59,6 @@ export function BottomNav({ unreadAlerts = 0 }: BottomNavProps) {
               </button>
             );
           })}
-
-          {/* More button */}
-          <button
-            onClick={() => setMoreOpen(true)}
-            className="flex flex-col items-center gap-0.5 py-2.5 px-3 min-w-[56px] text-muted-foreground hover:text-foreground/70 transition-all"
-          >
-            <MoreHorizontal className="w-5 h-5" strokeWidth={1.5} />
-            <span className="text-[10px] font-medium tracking-wide">More</span>
-          </button>
         </div>
       </nav>
 
