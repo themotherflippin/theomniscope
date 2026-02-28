@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -166,9 +167,18 @@ function ErrorState({ message }: { message: string }) {
 // --- Main Widget ---
 
 export default function WalletActivityWidget() {
+  const [searchParams] = useSearchParams();
   const [inputValue, setInputValue] = useState("");
   const [activeAddress, setActiveAddress] = useState("");
 
+  // Auto-fill from URL query param ?wallet=0x...
+  useEffect(() => {
+    const walletParam = searchParams.get("wallet");
+    if (walletParam && /^0x[a-fA-F0-9]{40}$/.test(walletParam)) {
+      setInputValue(walletParam);
+      setActiveAddress(walletParam);
+    }
+  }, [searchParams]);
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
