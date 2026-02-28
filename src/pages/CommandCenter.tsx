@@ -120,7 +120,7 @@ const WIDGET_REGISTRY: Record<string, Omit<WidgetConfig, "id">> = {
   watchlist: {
     title: "Watchlist",
     icon: <Eye className="w-3 h-3" />,
-    size: "full",
+    size: "sm",
     accentColor: "hsl(var(--chart-cyan))",
     bgClass: "bg-widget-watchlist",
     component: WatchlistWidget,
