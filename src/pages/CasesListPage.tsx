@@ -6,7 +6,7 @@ import {
   Plus,
   Search,
   ChevronRight,
-  AlertTriangle,
+  Trash2,
   Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCasesList, useCreateCase } from "@/hooks/useCases";
+import { useCasesList, useCreateCase, useDeleteCase } from "@/hooks/useCases";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { CasePriority, CaseStatus } from "@/lib/case.types";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -53,8 +63,11 @@ export default function CasesListPage() {
   const [newDesc, setNewDesc] = useState("");
   const [newPriority, setNewPriority] = useState<CasePriority>("medium");
 
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
   const { data: cases, isLoading } = useCasesList(statusFilter);
   const createCase = useCreateCase();
+  const deleteCase = useDeleteCase();
 
   const filtered = (cases ?? []).filter(
     (c) => !searchQ || c.title.toLowerCase().includes(searchQ.toLowerCase())
@@ -200,13 +213,47 @@ export default function CasesListPage() {
                       {new Date(c.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
+                  <div className="flex flex-col items-center gap-1 shrink-0 mt-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(c.id); }}
+                      className="p-1.5 rounded-lg hover:bg-danger/15 text-muted-foreground hover:text-danger transition-colors"
+                      aria-label="Delete case"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </motion.button>
             ))}
           </AnimatePresence>
         </div>
       )}
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce case ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Toutes les notes et preuves associées seront supprimées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-danger text-danger-foreground hover:bg-danger/90"
+              disabled={deleteCase.isPending}
+              onClick={async () => {
+                if (!deleteTarget) return;
+                await deleteCase.mutateAsync(deleteTarget);
+                setDeleteTarget(null);
+              }}
+            >
+              {deleteCase.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
