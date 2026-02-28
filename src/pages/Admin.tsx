@@ -272,10 +272,10 @@ function InvitationCodes() {
       {codes.length === 0 ? (
         <p className="text-center text-xs text-muted-foreground py-6">{t("admin.noCodes")}</p>
       ) : (
-        <Carousel opts={{ align: "start" }} className="w-full">
-          <CarouselContent className="-ml-2">
+        <Carousel orientation="vertical" opts={{ align: "start" }} className="w-full">
+          <CarouselContent className="-mt-2 max-h-[280px]">
             {codes.map((c) => (
-              <CarouselItem key={c.id} className="pl-2 basis-[85%]">
+              <CarouselItem key={c.id} className="pt-2 basis-auto">
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-border bg-card">
                   <div className="flex-1 min-w-0">
                     <span className="font-mono text-xs font-semibold tracking-wider block">{c.code}</span>
