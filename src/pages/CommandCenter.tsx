@@ -260,21 +260,32 @@ export default function CommandCenter() {
             Real-time intelligence overview
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="relative"
-            onClick={() => navigate("/alerts")}
-          >
-            <Bell className="w-4 h-4" />
-            {unreadAlerts > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-danger text-[9px] font-bold flex items-center justify-center text-danger-foreground">
-                {unreadAlerts > 9 ? "9+" : unreadAlerts}
-              </span>
-            )}
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="relative"
+          onClick={() => navigate("/server-alerts")}
+        >
+          <Bell className="w-4 h-4" />
+          {unreadAlerts > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-danger text-[9px] font-bold flex items-center justify-center text-danger-foreground">
+              {unreadAlerts > 9 ? "9+" : unreadAlerts}
+            </span>
+          )}
+        </Button>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-4 px-4">
+        <Button size="sm" variant="outline" className="shrink-0 text-xs gap-1.5" onClick={() => navigate("/lookup")}>
+          <Search className="w-3.5 h-3.5" /> Investigate
+        </Button>
+        <Button size="sm" variant="outline" className="shrink-0 text-xs gap-1.5" onClick={() => navigate("/intel")}>
+          <Eye className="w-3.5 h-3.5" /> Token Intel
+        </Button>
+        <Button size="sm" variant="outline" className="shrink-0 text-xs gap-1.5" onClick={() => navigate("/cases")}>
+          <ExternalLink className="w-3.5 h-3.5" /> New Case
+        </Button>
       </div>
 
       {/* Critical Banner */}
