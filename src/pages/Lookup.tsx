@@ -1,15 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MiniChart } from '@/components/MiniChart';
 import { useI18n } from '@/lib/i18n';
-import { useMarketData } from '@/hooks/useMarketData';
 import { formatPrice, formatNumber, formatPct, shortenAddress } from '@/lib/formatters';
+import { supabase } from '@/integrations/supabase/client';
 import {
-  Eye, Search, Copy, ExternalLink, Shield, ShieldAlert, ShieldCheck, Users,
-  BarChart3, Droplets, Clock, TrendingUp, TrendingDown, Activity, Loader2,
-  AlertTriangle, CheckCircle, XCircle, Flame, Wallet, ArrowLeftRight
+  Eye, Search, Copy, Shield, ShieldAlert, ShieldCheck, Users,
+  BarChart3, Droplets, Clock, TrendingUp, Activity, Loader2,
+  AlertTriangle, CheckCircle, XCircle, Wallet, ArrowLeftRight
 } from 'lucide-react';
 
 interface LookupResult {
@@ -21,136 +22,106 @@ interface LookupResult {
   price: number;
   priceChange1h: number;
   priceChange24h: number;
+  priceChange5m: number;
   volume24h: number;
   liquidity: number;
   marketCap: number;
-  holders: number;
   txCount24h: number;
   buyCount: number;
   sellCount: number;
   ageHours: number;
-  // Risk
+  pairAddress: string;
+  // Risk indicators derived from real data
   riskScore: number;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   riskFlags: { label: string; severity: string }[];
-  // Extra
-  topHolderPct: number;
-  isRenounced: boolean;
-  isHoneypot: boolean;
-  buyTax: number;
-  sellTax: number;
-  lpLocked: boolean;
-  lpLockDays: number;
-  deployer: string;
-  deployerProjects: number;
-  deployerRugs: number;
 }
 
-function rand(min: number, max: number) { return Math.random() * (max - min) + min; }
-function randInt(min: number, max: number) { return Math.floor(rand(min, max)); }
-
-function generateAddress(): string {
-  return '0x' + Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-}
-
-function simulateLookup(query: string, marketTokens: any[]): LookupResult | null {
-  const q = query.trim().toLowerCase();
-  
-  // Try to match existing token by address or symbol/name
-  const match = marketTokens.find(t => 
-    t.address.toLowerCase() === q || 
-    t.symbol.toLowerCase() === q ||
-    t.name.toLowerCase() === q
-  );
-
-  const hash = query.split('').reduce((a: number, c: string) => a + c.charCodeAt(0), 0);
-  const riskScore = match ? randInt(10, 70) : randInt(30, 90);
-  const riskLevel = riskScore < 30 ? 'low' : riskScore < 50 ? 'medium' : riskScore < 70 ? 'high' : 'critical';
-
+function computeRisk(pair: any): { score: number; level: string; flags: { label: string; severity: string }[] } {
   const flags: { label: string; severity: string }[] = [];
-  if (riskScore > 60) flags.push({ label: 'High holder concentration', severity: 'danger' });
-  if (riskScore > 40) flags.push({ label: 'Low liquidity ratio', severity: 'warning' });
-  if (riskScore > 70) flags.push({ label: 'Potential honeypot pattern', severity: 'critical' });
-  if (riskScore > 30) flags.push({ label: 'Unverified contract', severity: 'info' });
-  if (riskScore > 50) flags.push({ label: 'Deployer has rugpull history', severity: 'danger' });
+  let score = 0;
 
-  if (match) {
-    return {
-      address: match.address,
-      symbol: match.symbol,
-      name: match.name,
-      chain: match.chain,
-      dex: match.dex,
-      price: match.price,
-      priceChange1h: match.priceChange1h,
-      priceChange24h: match.priceChange24h,
-      volume24h: match.volume24h,
-      liquidity: match.liquidity,
-      marketCap: match.marketCap,
-      holders: match.holders,
-      txCount24h: match.txCount24h,
-      buyCount: match.buyCount,
-      sellCount: match.sellCount,
-      ageHours: match.ageHours,
-      riskScore,
-      riskLevel,
-      riskFlags: flags,
-      topHolderPct: rand(5, 40),
-      isRenounced: Math.random() > 0.4,
-      isHoneypot: false,
-      buyTax: rand(0, 5),
-      sellTax: rand(0, 8),
-      lpLocked: Math.random() > 0.2,
-      lpLockDays: randInt(30, 365),
-      deployer: generateAddress(),
-      deployerProjects: randInt(1, 20),
-      deployerRugs: riskScore > 50 ? randInt(1, 3) : 0,
-    };
+  const liq = pair.liquidity?.usd || 0;
+  const vol = pair.volume?.h24 || 0;
+  const mc = pair.marketCap || pair.fdv || 0;
+  const age = pair.pairCreatedAt ? (Date.now() - pair.pairCreatedAt) / 3600000 : 999;
+  const buys = pair.txns?.h24?.buys || 0;
+  const sells = pair.txns?.h24?.sells || 0;
+
+  // Liquidity check
+  if (liq < 5000) { score += 30; flags.push({ label: `Very low liquidity ($${formatNumber(liq)})`, severity: 'critical' }); }
+  else if (liq < 50000) { score += 15; flags.push({ label: `Low liquidity ($${formatNumber(liq)})`, severity: 'warning' }); }
+
+  // Volume/liquidity ratio
+  if (liq > 0 && vol / liq > 10) { score += 10; flags.push({ label: 'Suspicious volume/liquidity ratio', severity: 'warning' }); }
+
+  // Age check
+  if (age < 1) { score += 20; flags.push({ label: 'Token created less than 1 hour ago', severity: 'danger' }); }
+  else if (age < 24) { score += 10; flags.push({ label: 'Token less than 24h old', severity: 'warning' }); }
+
+  // Buy/sell imbalance
+  const total = buys + sells;
+  if (total > 10) {
+    const sellPct = sells / total;
+    if (sellPct > 0.8) { score += 15; flags.push({ label: 'Heavy sell pressure (>80% sells)', severity: 'danger' }); }
   }
 
-  // Fallback: generate from address hash for unknown tokens
-  const symbols = ['UNKNOWN', 'NEW', 'MICRO', 'ANON', 'X'];
-  const names = ['Unknown Token', 'New Token', 'MicroCap', 'Anon Token', 'Token X'];
-  const chains = ['ethereum', 'solana', 'bsc', 'base', 'arbitrum', 'polygon', 'cronos'];
-  const dexes = ['Uniswap V3', 'Raydium', 'PancakeSwap', 'Uniswap V2', 'Jupiter'];
-  const idx = hash % symbols.length;
+  // Market cap check
+  if (mc > 0 && mc < 10000) { score += 10; flags.push({ label: 'Extremely low market cap', severity: 'warning' }); }
+
+  // No transactions
+  if (total === 0) { score += 20; flags.push({ label: 'No transactions in 24h', severity: 'danger' }); }
+
+  score = Math.min(score, 100);
+  const level = score < 25 ? 'low' : score < 50 ? 'medium' : score < 70 ? 'high' : 'critical';
+
+  if (score < 25 && flags.length === 0) {
+    flags.push({ label: 'No major risks detected', severity: 'info' });
+  }
+
+  return { score, level, flags };
+}
+
+function mapChainId(chainId: string): string {
+  const map: Record<string, string> = {
+    ethereum: 'ethereum', eth: 'ethereum', solana: 'solana', bsc: 'bsc',
+    arbitrum: 'arbitrum', polygon: 'polygon', base: 'base', cronos: 'cronos',
+    avalanche: 'avalanche', optimism: 'optimism',
+  };
+  return map[chainId?.toLowerCase()] || chainId || 'unknown';
+}
+
+function parsePairToResult(pair: any): LookupResult {
+  const risk = computeRisk(pair);
+  const age = pair.pairCreatedAt ? (Date.now() - pair.pairCreatedAt) / 3600000 : 0;
 
   return {
-    address: query,
-    symbol: symbols[idx],
-    name: names[idx],
-    chain: chains[hash % chains.length],
-    dex: dexes[hash % dexes.length],
-    price: rand(0.0000001, 2),
-    priceChange1h: rand(-20, 40),
-    priceChange24h: rand(-50, 100),
-    volume24h: rand(10000, 5000000),
-    liquidity: rand(5000, 2000000),
-    marketCap: rand(10000, 50000000),
-    holders: randInt(50, 30000),
-    txCount24h: randInt(100, 10000),
-    buyCount: randInt(50, 5000),
-    sellCount: randInt(50, 5000),
-    ageHours: rand(0.5, 2000),
-    riskScore,
-    riskLevel,
-    riskFlags: flags,
-    topHolderPct: rand(5, 60),
-    isRenounced: Math.random() > 0.5,
-    isHoneypot: riskScore > 75 && Math.random() > 0.5,
-    buyTax: rand(0, 10),
-    sellTax: rand(0, 15),
-    lpLocked: Math.random() > 0.3,
-    lpLockDays: randInt(30, 365),
-    deployer: generateAddress(),
-    deployerProjects: randInt(1, 20),
-    deployerRugs: riskScore > 50 ? randInt(1, 5) : 0,
+    address: pair.baseToken?.address || '',
+    symbol: pair.baseToken?.symbol || 'UNKNOWN',
+    name: pair.baseToken?.name || 'Unknown Token',
+    chain: mapChainId(pair.chainId),
+    dex: pair.dexId || 'Unknown DEX',
+    price: parseFloat(pair.priceUsd || '0'),
+    priceChange5m: pair.priceChange?.m5 || 0,
+    priceChange1h: pair.priceChange?.h1 || 0,
+    priceChange24h: pair.priceChange?.h24 || 0,
+    volume24h: pair.volume?.h24 || 0,
+    liquidity: pair.liquidity?.usd || 0,
+    marketCap: pair.marketCap || pair.fdv || 0,
+    txCount24h: (pair.txns?.h24?.buys || 0) + (pair.txns?.h24?.sells || 0),
+    buyCount: pair.txns?.h24?.buys || 0,
+    sellCount: pair.txns?.h24?.sells || 0,
+    ageHours: age,
+    pairAddress: pair.pairAddress || '',
+    riskScore: risk.score,
+    riskLevel: risk.level as LookupResult['riskLevel'],
+    riskFlags: risk.flags,
   };
 }
 
 function RiskMeter({ score }: { score: number }) {
-  const color = score < 30 ? 'text-success' : score < 50 ? 'text-warning' : score < 70 ? 'text-orange-400' : 'text-danger';
-  const bg = score < 30 ? 'bg-success' : score < 50 ? 'bg-warning' : score < 70 ? 'bg-orange-400' : 'bg-danger';
+  const color = score < 25 ? 'text-success' : score < 50 ? 'text-warning' : score < 70 ? 'text-orange-400' : 'text-danger';
+  const bg = score < 25 ? 'bg-success' : score < 50 ? 'bg-warning' : score < 70 ? 'bg-orange-400' : 'bg-danger';
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
@@ -179,23 +150,61 @@ function InfoRow({ label, value, icon, color }: { label: string; value: string; 
 }
 
 export default function Lookup() {
+  const [searchParams] = useSearchParams();
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<LookupResult | null>(null);
+  const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const { t } = useI18n();
-  const { tokens } = useMarketData();
 
-  const handleSearch = () => {
-    const q = address.trim();
+  // Read query param on mount
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && q.trim().length > 2) {
+      setAddress(q);
+      doSearch(q);
+    }
+  }, [searchParams]);
+
+  const doSearch = async (query: string) => {
+    const q = query.trim();
     if (!q || q.length < 2) return;
     setLoading(true);
     setResult(null);
-    setTimeout(() => {
-      setResult(simulateLookup(q, tokens));
-      setLoading(false);
-    }, 1500);
+    setError('');
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dexscreener-lookup?address=${encodeURIComponent(q)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+
+      const json = await res.json();
+
+      if (!json.pairs || json.pairs.length === 0) {
+        setError('Token not found on DexScreener. Check the contract address and try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Use the highest-liquidity pair
+      const bestPair = json.pairs[0];
+      setResult(parsePairToResult(bestPair));
+    } catch (err) {
+      console.error('Lookup error:', err);
+      setError('Failed to fetch token data. Please try again.');
+    }
+
+    setLoading(false);
   };
+
+  const handleSearch = () => doSearch(address);
 
   const copyAddress = () => {
     navigator.clipboard.writeText(result?.address || address);
@@ -249,10 +258,7 @@ export default function Lookup() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-16 gap-3"
             >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
-              >
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}>
                 <Eye className="w-8 h-8 text-primary" />
               </motion.div>
               <p className="text-sm text-muted-foreground">{t('lookup.scanning')}</p>
@@ -269,7 +275,21 @@ export default function Lookup() {
             </motion.div>
           )}
 
-          {!loading && !result && (
+          {!loading && error && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-16 gap-4"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-danger/10 flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-danger opacity-60" />
+              </div>
+              <p className="text-sm text-muted-foreground text-center max-w-[280px]">{error}</p>
+            </motion.div>
+          )}
+
+          {!loading && !result && !error && (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
@@ -338,40 +358,12 @@ export default function Lookup() {
               {/* Risk Assessment */}
               <div className={`gradient-card rounded-xl p-4 ${result.riskScore >= 70 ? 'border border-danger/20' : result.riskScore >= 50 ? 'border border-warning/20' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
-                  {result.riskScore < 30 ? <ShieldCheck className="w-4 h-4 text-success" /> :
+                  {result.riskScore < 25 ? <ShieldCheck className="w-4 h-4 text-success" /> :
                    result.riskScore < 50 ? <Shield className="w-4 h-4 text-warning" /> :
                    <ShieldAlert className="w-4 h-4 text-danger" />}
                   <span className="text-sm font-display font-semibold text-foreground">{t('lookup.riskAssessment')}</span>
                 </div>
                 <RiskMeter score={result.riskScore} />
-                
-                {/* Honeypot / Tax */}
-                <div className="grid grid-cols-2 gap-2 mt-3">
-                  <div className={`rounded-lg p-2 text-center ${result.isHoneypot ? 'bg-danger/10 border border-danger/20' : 'bg-success/10 border border-success/20'}`}>
-                    <span className="text-[9px] text-muted-foreground block">Honeypot</span>
-                    <span className={`text-xs font-bold ${result.isHoneypot ? 'text-danger' : 'text-success'}`}>
-                      {result.isHoneypot ? '⚠ DETECTED' : '✓ SAFE'}
-                    </span>
-                  </div>
-                  <div className={`rounded-lg p-2 text-center ${result.isRenounced ? 'bg-success/10 border border-success/20' : 'bg-warning/10 border border-warning/20'}`}>
-                    <span className="text-[9px] text-muted-foreground block">Ownership</span>
-                    <span className={`text-xs font-bold ${result.isRenounced ? 'text-success' : 'text-warning'}`}>
-                      {result.isRenounced ? '✓ Renounced' : '⚠ Not renounced'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Tax info */}
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <div className="rounded-lg p-2 text-center bg-secondary/50">
-                    <span className="text-[9px] text-muted-foreground block">Buy Tax</span>
-                    <span className={`text-xs font-bold font-mono ${result.buyTax > 5 ? 'text-danger' : 'text-foreground'}`}>{result.buyTax.toFixed(1)}%</span>
-                  </div>
-                  <div className="rounded-lg p-2 text-center bg-secondary/50">
-                    <span className="text-[9px] text-muted-foreground block">Sell Tax</span>
-                    <span className={`text-xs font-bold font-mono ${result.sellTax > 5 ? 'text-danger' : 'text-foreground'}`}>{result.sellTax.toFixed(1)}%</span>
-                  </div>
-                </div>
 
                 {/* Risk flags */}
                 {result.riskFlags.length > 0 && (
@@ -381,7 +373,7 @@ export default function Lookup() {
                         {flag.severity === 'critical' ? <XCircle className="w-3.5 h-3.5 text-danger flex-shrink-0" /> :
                          flag.severity === 'danger' ? <AlertTriangle className="w-3.5 h-3.5 text-danger flex-shrink-0" /> :
                          flag.severity === 'warning' ? <AlertTriangle className="w-3.5 h-3.5 text-warning flex-shrink-0" /> :
-                         <CheckCircle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
+                         <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />}
                         <span className="text-foreground/80">{flag.label}</span>
                       </div>
                     ))}
@@ -398,8 +390,7 @@ export default function Lookup() {
                 <InfoRow label="Market Cap" value={formatNumber(result.marketCap)} icon={<TrendingUp className="w-3 h-3" />} />
                 <InfoRow label="Volume 24h" value={formatNumber(result.volume24h)} icon={<BarChart3 className="w-3 h-3" />} />
                 <InfoRow label="Liquidity" value={formatNumber(result.liquidity)} icon={<Droplets className="w-3 h-3" />} />
-                <InfoRow label="Holders" value={result.holders.toLocaleString()} icon={<Users className="w-3 h-3" />} />
-                <InfoRow label="Age" value={formatAge(result.ageHours)} icon={<Clock className="w-3 h-3" />} />
+                <InfoRow label="Age" value={result.ageHours > 0 ? formatAge(result.ageHours) : 'N/A'} icon={<Clock className="w-3 h-3" />} />
                 <InfoRow label="Txns 24h" value={result.txCount24h.toLocaleString()} icon={<ArrowLeftRight className="w-3 h-3" />} />
               </div>
 
@@ -411,51 +402,26 @@ export default function Lookup() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <div className="rounded-lg bg-success/10 p-3 text-center">
-                    <p className="text-[9px] text-muted-foreground mb-0.5">Buys</p>
+                    <p className="text-[9px] text-muted-foreground mb-0.5">Buys (24h)</p>
                     <p className="text-sm font-bold font-mono text-success">{result.buyCount.toLocaleString()}</p>
                   </div>
                   <div className="rounded-lg bg-danger/10 p-3 text-center">
-                    <p className="text-[9px] text-muted-foreground mb-0.5">Sells</p>
+                    <p className="text-[9px] text-muted-foreground mb-0.5">Sells (24h)</p>
                     <p className="text-sm font-bold font-mono text-danger">{result.sellCount.toLocaleString()}</p>
                   </div>
                 </div>
-                {/* Buy/Sell pressure bar */}
-                <div className="h-2 rounded-full overflow-hidden flex">
-                  <div className="bg-success h-full" style={{ width: `${(result.buyCount / (result.buyCount + result.sellCount)) * 100}%` }} />
-                  <div className="bg-danger h-full flex-1" />
-                </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-[9px] font-mono text-success">{((result.buyCount / (result.buyCount + result.sellCount)) * 100).toFixed(0)}% buy</span>
-                  <span className="text-[9px] font-mono text-danger">{((result.sellCount / (result.buyCount + result.sellCount)) * 100).toFixed(0)}% sell</span>
-                </div>
-              </div>
-
-              {/* Liquidity & Security */}
-              <div className="gradient-card rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Droplets className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-display font-semibold text-foreground">{t('lookup.security')}</span>
-                </div>
-                <InfoRow
-                  label="LP Locked"
-                  value={result.lpLocked ? `✓ ${result.lpLockDays}d` : '✗ No'}
-                  color={result.lpLocked ? 'text-success' : 'text-danger'}
-                />
-                <InfoRow
-                  label="Top Holder %"
-                  value={`${result.topHolderPct.toFixed(1)}%`}
-                  color={result.topHolderPct > 30 ? 'text-danger' : result.topHolderPct > 15 ? 'text-warning' : 'text-foreground'}
-                />
-                <InfoRow
-                  label="Deployer"
-                  value={shortenAddress(result.deployer)}
-                  icon={<Wallet className="w-3 h-3" />}
-                />
-                <InfoRow
-                  label="Deployer Projects"
-                  value={`${result.deployerProjects} (${result.deployerRugs} rugs)`}
-                  color={result.deployerRugs > 0 ? 'text-danger' : 'text-foreground'}
-                />
+                {(result.buyCount + result.sellCount) > 0 && (
+                  <>
+                    <div className="h-2 rounded-full overflow-hidden flex">
+                      <div className="bg-success h-full" style={{ width: `${(result.buyCount / (result.buyCount + result.sellCount)) * 100}%` }} />
+                      <div className="bg-danger h-full flex-1" />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[9px] font-mono text-success">{((result.buyCount / (result.buyCount + result.sellCount)) * 100).toFixed(0)}% buy</span>
+                      <span className="text-[9px] font-mono text-danger">{((result.sellCount / (result.buyCount + result.sellCount)) * 100).toFixed(0)}% sell</span>
+                    </div>
+                  </>
+                )}
               </div>
             </motion.div>
           )}
