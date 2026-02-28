@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_rules: {
+        Row: {
+          chain: string
+          config: Json
+          created_at: string
+          id: string
+          is_enabled: boolean
+          name: string
+          rule_type: string
+          scope: string
+          severity: string
+          subject: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          chain?: string
+          config?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          name: string
+          rule_type: string
+          scope: string
+          severity?: string
+          subject?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          chain?: string
+          config?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          rule_type?: string
+          scope?: string
+          severity?: string
+          subject?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      alert_state: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      alerts: {
+        Row: {
+          chain: string
+          created_at: string
+          description: string
+          evidence: Json
+          id: string
+          rule_id: string | null
+          scope: string
+          severity: string
+          status: string
+          subject: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          chain?: string
+          created_at?: string
+          description?: string
+          evidence?: Json
+          id?: string
+          rule_id?: string | null
+          scope: string
+          severity?: string
+          status?: string
+          subject?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          chain?: string
+          created_at?: string
+          description?: string
+          evidence?: Json
+          id?: string
+          rule_id?: string | null
+          scope?: string
+          severity?: string
+          status?: string
+          subject?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "alert_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitation_codes: {
         Row: {
           code: string
@@ -38,6 +157,42 @@ export type Database = {
           id?: string
           is_used?: boolean
           used_at?: string | null
+        }
+        Relationships: []
+      }
+      watchlists: {
+        Row: {
+          chain: string
+          created_at: string
+          id: string
+          is_enabled: boolean
+          label: string
+          subject: string
+          type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          chain?: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          label?: string
+          subject: string
+          type: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          chain?: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          label?: string
+          subject?: string
+          type?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

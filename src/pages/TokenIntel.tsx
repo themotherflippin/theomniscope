@@ -11,6 +11,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
+import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -243,6 +244,14 @@ export default function TokenIntel() {
                         <Copy className="w-3 h-3" />
                       )}
                     </button>
+                    <AddToWatchlistButton
+                      type="token"
+                      subject={summary.tokenAddress}
+                      label={summary.symbol}
+                      size="sm"
+                      variant="ghost"
+                      className="text-[10px] h-6 ml-auto"
+                    />
                   </div>
                 </div>
               ) : null}

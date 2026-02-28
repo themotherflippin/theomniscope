@@ -12,7 +12,6 @@ import InvitationGate from "@/components/InvitationGate";
 import Onboarding from "@/pages/Onboarding";
 import Radar from "@/pages/Radar";
 import Opportunities from "@/pages/Opportunities";
-import Watchlists from "@/pages/Watchlists";
 import AlertsPage from "@/pages/AlertsPage";
 import Profile from "@/pages/Profile";
 import TokenDetail from "@/pages/TokenDetail";
@@ -21,6 +20,9 @@ import Lookup from "@/pages/Lookup";
 import Admin from "@/pages/Admin";
 import CommandCenter from "@/pages/CommandCenter";
 import TokenIntel from "@/pages/TokenIntel";
+import WatchlistsPage from "@/pages/WatchlistsPage";
+import ServerAlertsPage from "@/pages/ServerAlertsPage";
+import AlertRulesPage from "@/pages/AlertRulesPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,8 +53,10 @@ function AppContent() {
                   <Route path="/intel" element={<TokenIntel />} />
                   <Route path="/intel/:address" element={<TokenIntel />} />
                   <Route path="/opportunities" element={<Opportunities prefs={prefs} />} />
-                  <Route path="/watchlists" element={<Watchlists />} />
+                  <Route path="/watchlists" element={<WatchlistsPage />} />
                   <Route path="/alerts" element={<AlertsPage />} />
+                  <Route path="/server-alerts" element={<ServerAlertsPage />} />
+                  <Route path="/alert-rules" element={<AlertRulesPage />} />
                   <Route path="/profile" element={<Profile prefs={prefs} onUpdatePrefs={updatePrefs} />} />
                 </Route>
                 <Route path="/token/:id" element={<TokenDetail />} />

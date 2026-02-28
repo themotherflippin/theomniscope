@@ -8,3 +8,15 @@ verify_jwt = false
 
 [functions.token-intel]
 verify_jwt = false
+
+[functions.watchlist-api]
+verify_jwt = false
+
+[functions.alert-rules-api]
+verify_jwt = false
+
+[functions.alerts-api]
+verify_jwt = false
+
+[functions.alert-scanner]
+verify_jwt = false

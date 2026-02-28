@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Token, RiskReport, Alert, Signal, OpportunityScore } from "@/lib/types";
 import WalletActivityWidget from "@/components/WalletActivityWidget";
+import { useRunAlertScanner } from "@/hooks/useAlertsFeed";
 
 function formatUSD(n: number): string {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
@@ -416,24 +417,24 @@ export default function CommandCenter() {
         <Button
           variant="outline"
           className="h-auto py-3 px-4 flex flex-col items-start gap-1"
-          onClick={() => navigate("/lookup")}
+          onClick={() => navigate("/watchlists")}
         >
           <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Investigate</span>
+            <Eye className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Watchlists</span>
           </div>
-          <span className="text-[10px] text-muted-foreground">Lookup wallet or token</span>
+          <span className="text-[10px] text-muted-foreground">Track wallets & tokens</span>
         </Button>
         <Button
           variant="outline"
           className="h-auto py-3 px-4 flex flex-col items-start gap-1"
-          onClick={() => navigate("/opportunities")}
+          onClick={() => navigate("/alert-rules")}
         >
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-warning" />
-            <span className="text-sm font-medium">Signals</span>
+            <span className="text-sm font-medium">Alert Rules</span>
           </div>
-          <span className="text-[10px] text-muted-foreground">View all entry/exit signals</span>
+          <span className="text-[10px] text-muted-foreground">Configure detection rules</span>
         </Button>
       </div>
 
