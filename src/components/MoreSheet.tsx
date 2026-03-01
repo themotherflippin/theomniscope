@@ -14,23 +14,13 @@ interface MoreSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const sections = [
-  {
-    title: "Monitoring",
-    items: [
-      { icon: Eye, label: "Watchlists", path: "/watchlists", desc: "Track wallets & tokens" },
-      { icon: Zap, label: "Alert Rules", path: "/alert-rules", desc: "Custom notifications" },
-      { icon: List, label: "Radar", path: "/radar", desc: "Live market feed" },
-    ],
-  },
-  {
-    title: "Analysis",
-    items: [
-      { icon: Network, label: "Clusters", path: "/intel", desc: "On-chain intelligence" },
-      { icon: BarChart3, label: "Opportunities", path: "/opportunities", desc: "Scored setups" },
-      { icon: BookOpen, label: "New Listings", path: "/new-listings", desc: "Fresh tokens" },
-    ],
-  },
+const hubItems = [
+  { icon: Eye, label: "Watchlists", path: "/watchlists", desc: "Track wallets & tokens", gradient: "from-blue-500/20 to-cyan-500/10", accent: "text-blue-400", iconBg: "bg-blue-500/20" },
+  { icon: Zap, label: "Alert Rules", path: "/alert-rules", desc: "Custom notifications", gradient: "from-amber-500/20 to-orange-500/10", accent: "text-amber-400", iconBg: "bg-amber-500/20" },
+  { icon: List, label: "Radar", path: "/radar", desc: "Live market feed", gradient: "from-emerald-500/20 to-green-500/10", accent: "text-emerald-400", iconBg: "bg-emerald-500/20" },
+  { icon: Network, label: "Clusters", path: "/intel", desc: "On-chain intelligence", gradient: "from-purple-500/20 to-violet-500/10", accent: "text-purple-400", iconBg: "bg-purple-500/20" },
+  { icon: BarChart3, label: "Opportunities", path: "/opportunities", desc: "Scored setups", gradient: "from-cyan-500/20 to-teal-500/10", accent: "text-cyan-400", iconBg: "bg-cyan-500/20" },
+  { icon: BookOpen, label: "New Listings", path: "/new-listings", desc: "Fresh tokens", gradient: "from-rose-500/20 to-pink-500/10", accent: "text-rose-400", iconBg: "bg-rose-500/20" },
 ];
 
 export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
@@ -52,17 +42,18 @@ export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
           </SheetTitle>
         </SheetHeader>
 
-        <div className="grid grid-cols-2 gap-2">
-          {sections.flatMap((s) => s.items).map((item) => (
+        <div className="grid grid-cols-2 gap-2.5">
+          {hubItems.map((item) => (
             <button
               key={item.path}
               onClick={() => go(item.path)}
-              className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border/60 bg-muted/40 hover:bg-accent/60 transition-colors text-center"
+              className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border border-white/[0.06] bg-gradient-to-br ${item.gradient} backdrop-blur-md hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 text-center overflow-hidden shadow-lg shadow-black/10`}
             >
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <item.icon className="w-5 h-5 text-primary" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+              <div className={`w-11 h-11 rounded-xl ${item.iconBg} flex items-center justify-center`}>
+                <item.icon className={`w-5 h-5 ${item.accent}`} />
               </div>
-              <p className="text-xs font-medium text-foreground">{item.label}</p>
+              <p className="text-xs font-semibold text-foreground">{item.label}</p>
               <p className="text-[10px] text-muted-foreground leading-tight">{item.desc}</p>
             </button>
           ))}
