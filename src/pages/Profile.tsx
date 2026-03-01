@@ -119,32 +119,8 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
         {/* Chains */}
         <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="gradient-card rounded-xl p-4">
           <h3 className="text-xs font-display font-semibold text-muted-foreground mb-3 uppercase tracking-wider">{t('profile.activeChains')}</h3>
-          {/* Ethereum full width */}
-          {(() => {
-            const c: Chain = 'ethereum';
-            const active = prefs.chains.includes(c);
-            return (
-              <button
-                onClick={() => {
-                  const newChains = active ? prefs.chains.filter(x => x !== c) : [...prefs.chains, c];
-                  onUpdatePrefs({ chains: newChains });
-                }}
-                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all mb-2 ${
-                  active ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-secondary/30'
-                }`}
-              >
-                <span className="text-sm text-foreground font-medium">{chainLabels[c]}</span>
-                <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
-                  active ? 'border-primary bg-primary' : 'border-muted-foreground/30'
-                }`}>
-                  {active && <span className="text-primary-foreground text-[8px]">✓</span>}
-                </span>
-              </button>
-            );
-          })()}
-          {/* Remaining chains in 2-col grid */}
-          <div className="grid grid-cols-2 gap-2">
-            {(['solana', 'bsc', 'polygon', 'arbitrum', 'base', 'cronos'] as Chain[]).map(c => (
+          <div className="space-y-1.5">
+            {(['ethereum', 'solana', 'bsc', 'polygon', 'arbitrum', 'base', 'cronos'] as Chain[]).map(c => (
               <button
                 key={c}
                 onClick={() => {
@@ -153,11 +129,11 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
                     : [...prefs.chains, c];
                   onUpdatePrefs({ chains: newChains });
                 }}
-                className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-                  prefs.chains.includes(c) ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-secondary/30'
+                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                  prefs.chains.includes(c) ? 'border-primary/30 bg-primary/3' : 'border-border/50 bg-secondary/30'
                 }`}
               >
-                <span className="text-xs text-foreground">{chainLabels[c]}</span>
+                <span className="text-sm text-foreground">{chainLabels[c]}</span>
                 <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
                   prefs.chains.includes(c) ? 'border-primary bg-primary' : 'border-muted-foreground/30'
                 }`}>

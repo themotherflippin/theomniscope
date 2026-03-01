@@ -265,7 +265,7 @@ export default function Radar({ prefs }: RadarProps) {
             ))}
           </div>
           {isMobile ? (
-            <div className="overflow-y-auto max-h-[60vh] scrollbar-none space-y-2.5 pb-2">
+            <div className="space-y-2.5">
               {sorted.map(tk => (
                 <TokenCard key={tk.id} token={tk} risk={risks.get(tk.id)} onSelect={() => navigate(`/token/${tk.id}`)} showChain />
               ))}
