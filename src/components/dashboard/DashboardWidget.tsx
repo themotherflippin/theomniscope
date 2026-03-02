@@ -85,6 +85,8 @@ export function DashboardWidget({
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
         whileTap={isExpandable ? { scale: 0.97 } : undefined}
         className={cn(sizeClasses[size], "group relative", className)}
+        // In edit mode, make the entire widget draggable
+        {...(isEditMode ? { ...attributes, ...listeners } : {})}
       >
         <div
           onClick={handleTap}
@@ -95,7 +97,7 @@ export function DashboardWidget({
             "border-white/[0.06]",
             "shadow-lg shadow-black/15",
             isDragging && "shadow-2xl shadow-primary/15 ring-2 ring-primary/30 z-50",
-            isEditMode && "ring-1 ring-dashed ring-primary/20",
+            isEditMode && "ring-1 ring-dashed ring-primary/20 touch-none",
             isExpandable &&
               "cursor-pointer active:shadow-primary/10 hover:border-white/[0.1] hover:shadow-xl"
           )}
@@ -116,13 +118,7 @@ export function DashboardWidget({
           {/* Header */}
           <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
             {isEditMode && (
-              <button
-                {...attributes}
-                {...listeners}
-                className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 rounded-md hover:bg-accent/50 transition-colors touch-none"
-              >
-                <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
+              <GripVertical className="w-3.5 h-3.5 text-muted-foreground cursor-grab" />
             )}
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               <span className="shrink-0 opacity-60">{icon}</span>
@@ -136,9 +132,10 @@ export function DashboardWidget({
             {isEditMode && onRemove && (
               <button
                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                className="p-0.5 rounded-full hover:bg-destructive/10 transition-colors"
+                onPointerDown={(e) => e.stopPropagation()}
+                className="p-1 rounded-full hover:bg-destructive/10 transition-colors"
               >
-                <X className="w-3 h-3 text-destructive" />
+                <X className="w-3.5 h-3.5 text-destructive" />
               </button>
             )}
           </div>
