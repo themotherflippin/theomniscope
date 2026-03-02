@@ -62,7 +62,7 @@ const ethersConfig = defaultConfig({
   defaultChainId: 1,
   enableEIP6963: true,
   enableInjected: true,
-  enableCoinbase: true,
+  enableCoinbase: false,
 });
 
 createWeb3Modal({
