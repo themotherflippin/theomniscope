@@ -3,13 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState } from "react";
 import { useUserPreferences } from "@/lib/userPreferences";
 import { useMarketData } from "@/hooks/useMarketData";
 import { AppShell } from "@/components/AppShell";
 import { I18nProvider } from "@/lib/i18n";
-import "@/lib/web3modal"; // Initialize Web3Modal
-import AccessGateway from "@/components/AccessGateway";
+import { PremiumProvider } from "@/hooks/usePremium";
+import "@/lib/web3modal";
 import Onboarding from "@/pages/Onboarding";
 import Radar from "@/pages/Radar";
 import Opportunities from "@/pages/Opportunities";
@@ -35,7 +34,6 @@ const queryClient = new QueryClient();
 function AppContent() {
   const { prefs, updatePrefs } = useUserPreferences();
   const { unreadAlerts } = useMarketData();
-  const [hasAccess, setHasAccess] = useState(false);
 
   return (
     <BrowserRouter>
@@ -45,9 +43,7 @@ function AppContent() {
         <Route
           path="*"
           element={
-            !hasAccess ? (
-              <AccessGateway onGranted={() => setHasAccess(true)} />
-            ) : !prefs.onboardingComplete ? (
+            !prefs.onboardingComplete ? (
               <Onboarding onComplete={updatePrefs} />
             ) : (
               <Routes>
@@ -83,9 +79,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <I18nProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
+        <PremiumProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </PremiumProvider>
       </I18nProvider>
     </TooltipProvider>
   </QueryClientProvider>
