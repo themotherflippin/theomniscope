@@ -8,7 +8,7 @@ import { useUserPreferences } from "@/lib/userPreferences";
 import { useMarketData } from "@/hooks/useMarketData";
 import { AppShell } from "@/components/AppShell";
 import { I18nProvider } from "@/lib/i18n";
-import InvitationGate from "@/components/InvitationGate";
+import AccessGateway from "@/components/AccessGateway";
 import Onboarding from "@/pages/Onboarding";
 import Radar from "@/pages/Radar";
 import Opportunities from "@/pages/Opportunities";
@@ -45,7 +45,7 @@ function AppContent() {
           path="*"
           element={
             !hasAccess ? (
-              <InvitationGate onGranted={() => setHasAccess(true)} />
+              <AccessGateway onGranted={() => setHasAccess(true)} />
             ) : !prefs.onboardingComplete ? (
               <Onboarding onComplete={updatePrefs} />
             ) : (

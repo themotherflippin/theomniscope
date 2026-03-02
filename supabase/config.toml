@@ -38,3 +38,18 @@ verify_jwt = false
 
 [functions.ai-analyze]
 verify_jwt = false
+
+[functions.access-wallet-auth]
+verify_jwt = false
+
+[functions.access-user-status]
+verify_jwt = false
+
+[functions.access-use-credit]
+verify_jwt = false
+
+[functions.access-create-checkout]
+verify_jwt = false
+
+[functions.access-stripe-webhook]
+verify_jwt = false
