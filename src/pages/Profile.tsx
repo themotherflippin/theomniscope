@@ -182,17 +182,6 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
           </motion.section>
         )}
 
-        {/* Reset */}
-        <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="gradient-card rounded-xl p-4">
-          <Button
-            variant="outline"
-            className="w-full border-border/50 text-muted-foreground hover:text-foreground"
-            onClick={() => onUpdatePrefs({ onboardingComplete: false })}
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            {t('profile.resetOnboarding')}
-          </Button>
-        </motion.section>
 
         <div className="text-center text-[10px] text-muted-foreground/40 pb-8 space-y-0.5 font-mono">
           <p>ORACLE v1.0 — by The Flippin' Labs</p>

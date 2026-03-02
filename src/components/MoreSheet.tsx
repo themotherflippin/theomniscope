@@ -1,12 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import {
   Eye, BookOpen, Network, Zap,
-  List, ShieldCheck, BarChart3,
+  List, BarChart3,
 } from "lucide-react";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { motion } from "framer-motion";
 
 interface MoreSheetProps {
@@ -25,7 +24,6 @@ const hubItems = [
 
 export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
   const navigate = useNavigate();
-  const isAdmin = useAdminStatus();
 
   const go = (path: string) => {
     onOpenChange(false);
@@ -56,28 +54,6 @@ export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
             </motion.button>
           ))}
         </div>
-
-        {isAdmin && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mt-3"
-          >
-            <button
-              onClick={() => go("/admin")}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/15 transition-all active:scale-[0.98]"
-            >
-              <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
-                <ShieldCheck className="w-4.5 h-4.5 text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="text-xs font-semibold text-primary">Admin Panel</p>
-                <p className="text-[10px] text-muted-foreground">Manage codes & system</p>
-              </div>
-            </button>
-          </motion.div>
-        )}
       </SheetContent>
     </Sheet>
   );
