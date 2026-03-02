@@ -25,9 +25,45 @@ function setSessionToken(token: string) {
 
 export type PremiumSource = "none" | "subscription" | "nft" | "invitation";
 
+export type PlanTier = "free" | "premium";
+
+export interface PremiumLimits {
+  walletLimit: number;
+  aiDailyLimit: number;
+  historyDays: number;
+  hasProSignals: boolean;
+  hasAdvancedAlerts: boolean;
+  hasSmartMoneyAlerts: boolean;
+  hasAdvancedAnalytics: boolean;
+  hasUnlimitedHistory: boolean;
+}
+
+const FREE_LIMITS: PremiumLimits = {
+  walletLimit: 3,
+  aiDailyLimit: 1,
+  historyDays: 7,
+  hasProSignals: false,
+  hasAdvancedAlerts: false,
+  hasSmartMoneyAlerts: false,
+  hasAdvancedAnalytics: false,
+  hasUnlimitedHistory: false,
+};
+
+const PREMIUM_LIMITS: PremiumLimits = {
+  walletLimit: Infinity,
+  aiDailyLimit: Infinity,
+  historyDays: Infinity,
+  hasProSignals: true,
+  hasAdvancedAlerts: true,
+  hasSmartMoneyAlerts: true,
+  hasAdvancedAnalytics: true,
+  hasUnlimitedHistory: true,
+};
+
 export interface PremiumState {
   isPremium: boolean;
   source: PremiumSource;
+  tier: PlanTier;
   walletAddress: string | null;
   nftVerified: boolean;
   subscriptionStatus: string | null;
@@ -36,6 +72,7 @@ export interface PremiumState {
 
 interface PremiumContextValue {
   premium: PremiumState;
+  limits: PremiumLimits;
   loading: boolean;
   walletConnecting: boolean;
   checkoutLoading: boolean;
@@ -45,6 +82,9 @@ interface PremiumContextValue {
   checkStatus: () => Promise<void>;
   isWalletConnected: boolean;
   walletAddress: string | undefined;
+  canTrackWallet: (currentCount: number) => boolean;
+  canUseAiInsight: (usedToday: number) => boolean;
+  requirePremium: (feature: string) => boolean;
 }
 
 const PremiumContext = createContext<PremiumContextValue | null>(null);
@@ -56,6 +96,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
   const [premium, setPremium] = useState<PremiumState>({
     isPremium: false,
     source: "none",
+    tier: "free",
     walletAddress: null,
     nftVerified: false,
     subscriptionStatus: null,
@@ -65,6 +106,8 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
   const [walletConnecting, setWalletConnecting] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const limits: PremiumLimits = premium.isPremium ? PREMIUM_LIMITS : FREE_LIMITS;
 
   const checkStatus = useCallback(async () => {
     try {
@@ -82,13 +125,14 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
         setPremium({
           isPremium: true,
           source: ["subscription", "nft", "invitation"].includes(src) ? src : "none",
+          tier: "premium",
           walletAddress: data.wallet_address || null,
           nftVerified: data.nft_verified || false,
           subscriptionStatus: data.subscription_status || null,
           subscriptionExpiresAt: data.subscription_expires_at || null,
         });
       } else {
-        setPremium((prev) => ({ ...prev, isPremium: false, source: "none" }));
+        setPremium((prev) => ({ ...prev, isPremium: false, source: "none", tier: "free" }));
       }
     } catch (err) {
       console.error("[Premium] Status check failed:", err);
@@ -106,7 +150,6 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     }
   }, [checkStatus]);
 
-  // Wallet auth on connect
   useEffect(() => {
     if (isConnected && address && walletProvider && !premium.walletAddress) {
       authenticateWallet(address, chainId || 1);
@@ -140,6 +183,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
         setPremium({
           isPremium: hasPremium,
           source: hasPremium && ["subscription", "nft", "invitation"].includes(src) ? src : "none",
+          tier: hasPremium ? "premium" : "free",
           walletAddress: data?.wallet_address || walletAddress,
           nftVerified: data?.nft_verified || false,
           subscriptionStatus: null,
@@ -188,7 +232,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
       if (!data || data.length === 0) { setError("Invalid code."); return false; }
       const invitation = data[0];
       if (invitation.is_used && invitation.device_id === deviceId) {
-        // Already used by this device
+        // Already redeemed by this device
       } else if (invitation.is_used) {
         setError("Code already used.");
         return false;
@@ -205,7 +249,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
       }
       setSessionToken(sessionToken);
       await supabase.from("access_events").insert({ device_id: deviceId, event_type: "invitation_code", metadata: { code: trimmed } });
-      setPremium((prev) => ({ ...prev, isPremium: true, source: "invitation" }));
+      setPremium((prev) => ({ ...prev, isPremium: true, source: "invitation", tier: "premium" }));
       return true;
     } catch (err: any) {
       setError(err?.message || "Error validating code.");
@@ -213,10 +257,23 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const canTrackWallet = useCallback((currentCount: number) => {
+    return premium.isPremium || currentCount < limits.walletLimit;
+  }, [premium.isPremium, limits.walletLimit]);
+
+  const canUseAiInsight = useCallback((usedToday: number) => {
+    return premium.isPremium || usedToday < limits.aiDailyLimit;
+  }, [premium.isPremium, limits.aiDailyLimit]);
+
+  const requirePremium = useCallback((feature: string) => {
+    return !premium.isPremium;
+  }, [premium.isPremium]);
+
   return (
     <PremiumContext.Provider
       value={{
         premium,
+        limits,
         loading,
         walletConnecting,
         checkoutLoading,
@@ -226,6 +283,9 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
         checkStatus,
         isWalletConnected: isConnected,
         walletAddress: address,
+        canTrackWallet,
+        canUseAiInsight,
+        requirePremium,
       }}
     >
       {children}
