@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, Coins, KeyRound, Loader2, ChevronDown, Shield, Sparkles } from "lucide-react";
+import { Wallet, CreditCard, KeyRound, Loader2, ChevronDown, Shield, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAccessGateway } from "@/hooks/useAccessGateway";
@@ -14,11 +14,10 @@ export default function AccessGateway({ onGranted }: { onGranted: () => void }) 
     status,
     loading,
     walletConnecting,
-    checkoutLoading: _checkoutLoading,
+    checkoutLoading,
     error,
     connectWallet,
-    startCheckout: _startCheckout,
-    useCredits,
+    startCheckout,
     submitInvitationCode,
     grantAccess,
   } = useAccessGateway();
@@ -158,32 +157,27 @@ export default function AccessGateway({ onGranted }: { onGranted: () => void }) 
             </Button>
           </motion.div>
 
-
-
-
-          {/* 3. Use Credits */}
-          {status.credits > 0 && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              transition={spring}
-              whileTap={{ scale: 0.98 }}
+          {/* 2. Subscribe Weekly */}
+          <motion.div whileTap={{ scale: 0.98 }} transition={spring}>
+            <Button
+              onClick={startCheckout}
+              disabled={checkoutLoading}
+              variant="outline"
+              className="w-full h-12 rounded-xl font-semibold text-sm gap-2 border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.12]"
             >
-              <Button
-                onClick={() => useCredits(1)}
-                variant="outline"
-                className="w-full h-12 rounded-xl font-semibold text-sm gap-2 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/30 text-amber-200"
-              >
-                <Coins className="w-4 h-4 text-amber-400" />
-                <span>
-                  {lang === "fr" ? "Utiliser des Crédits" : "Use Credits"}
-                </span>
-                <span className="ml-auto text-xs font-mono bg-amber-500/20 px-2 py-0.5 rounded-full">
-                  {status.credits}
-                </span>
-              </Button>
-            </motion.div>
-          )}
+              {checkoutLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CreditCard className="w-4 h-4 text-cyan-400" />
+              )}
+              <span>
+                {lang === "fr" ? "Abonnement Hebdo" : "Subscribe Weekly"}
+              </span>
+              <span className="ml-auto text-xs text-muted-foreground">$9.99/wk</span>
+            </Button>
+          </motion.div>
+
+
 
           {/* Divider */}
           <div className="flex items-center gap-3 py-1">
