@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { GlobalSearch } from "./GlobalSearch";
 import { AiAssistant } from "./AiAssistant";
+import PremiumBadge from "./PremiumBadge";
 
 interface AppShellProps {
   unreadAlerts: number;
@@ -18,6 +19,7 @@ export function AppShell({ unreadAlerts }: AppShellProps) {
         <div className="flex-1 min-w-0">
           <GlobalSearch />
         </div>
+        <PremiumBadge />
       </div>
       {/* Content with top offset for fixed header */}
       <div
