@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Search, FolderOpen, Compass, Settings } from "lucide-react";
+import { LayoutDashboard, Search, FolderOpen, Compass, Settings, Lock } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { MoreSheet } from "@/components/MoreSheet";
+import { usePremium } from "@/hooks/usePremium";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 interface BottomNavProps {
   unreadAlerts?: number;
@@ -13,15 +15,18 @@ export function BottomNav({ unreadAlerts = 0 }: BottomNavProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { premium } = usePremium();
+  const { prefs } = useUserPreferences();
   const [moreOpen, setMoreOpen] = useState(false);
+  const isSimple = prefs.mode === "simple";
 
   const tabs = [
-    { path: "/", label: "Center", icon: LayoutDashboard },
-    { path: "/lookup", label: "Investigate", icon: Search },
-    { id: "hub", label: "Hub", icon: Compass },
-    { path: "/cases", label: "Cases", icon: FolderOpen },
-    { path: "/profile", label: "Settings", icon: Settings },
-  ];
+    { path: "/", label: "Center", icon: LayoutDashboard, hidden: false, premiumOnly: false },
+    { path: "/lookup", label: "Investigate", icon: Search, hidden: false, premiumOnly: false },
+    { id: "hub", label: "Hub", icon: Compass, hidden: false, premiumOnly: false },
+    { path: "/cases", label: "Cases", icon: FolderOpen, hidden: isSimple, premiumOnly: true },
+    { path: "/profile", label: "Settings", icon: Settings, hidden: false, premiumOnly: false },
+  ].filter(t => !t.hidden);
 
   if (location.pathname.startsWith("/token/")) return null;
 

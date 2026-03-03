@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMarketData } from "@/hooks/useMarketData";
+import { useUserPreferences } from "@/lib/userPreferences";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,7 +60,7 @@ interface WidgetConfig {
   expandedComponent?: React.ComponentType;
 }
 
-const WIDGET_REGISTRY: Record<string, Omit<WidgetConfig, "id">> = {
+const WIDGET_REGISTRY: Record<string, Omit<WidgetConfig, "id"> & { proOnly?: boolean }> = {
   portfolio: {
     title: "Portfolio",
     icon: <Wallet className="w-3 h-3" />,
@@ -108,6 +109,7 @@ const WIDGET_REGISTRY: Record<string, Omit<WidgetConfig, "id">> = {
     accentColor: "hsl(var(--primary))",
     bgClass: "bg-widget-ai",
     component: AiInsightWidget,
+    proOnly: true,
   },
   activity: {
     title: "Pulse",
@@ -116,6 +118,7 @@ const WIDGET_REGISTRY: Record<string, Omit<WidgetConfig, "id">> = {
     accentColor: "hsl(var(--chart-red))",
     bgClass: "bg-widget-activity",
     component: ActivityWidget,
+    proOnly: true,
   },
   watchlist: {
     title: "Watchlist",
@@ -162,6 +165,8 @@ function saveWidgetOrder(order: string[]) {
 export default function CommandCenter() {
   const navigate = useNavigate();
   const { unreadAlerts, provenance: marketProvenance } = useMarketData();
+  const { prefs } = useUserPreferences();
+  const isSimple = prefs.mode === "simple";
   const [widgetOrder, setWidgetOrder] = useState<string[]>(loadWidgetOrder);
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -287,22 +292,29 @@ export default function CommandCenter() {
       >
         <SortableContext items={widgetOrder} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-2 gap-1.5">
-            {widgetOrder.map((widgetId) => {
-              const config = WIDGET_REGISTRY[widgetId];
-              if (!config) return null;
-              const Component = config.component;
-              const ExpandedComponent = config.expandedComponent;
+            {widgetOrder
+              .filter((widgetId) => {
+                const config = WIDGET_REGISTRY[widgetId];
+                if (!config) return false;
+                if (isSimple && config.proOnly) return false;
+                return true;
+              })
+              .map((widgetId) => {
+              const cfg = WIDGET_REGISTRY[widgetId];
+              if (!cfg) return null;
+              const Component = cfg.component;
+              const ExpandedComponent = cfg.expandedComponent;
               return (
                 <DashboardWidget
                   key={widgetId}
                   id={widgetId}
-                  title={config.title}
-                  icon={config.icon}
-                  size={config.size}
+                  title={cfg.title}
+                  icon={cfg.icon}
+                  size={cfg.size}
                   isEditMode={isEditMode}
                   onRemove={() => removeWidget(widgetId)}
-                  accentColor={config.accentColor}
-                  bgClass={config.bgClass}
+                  accentColor={cfg.accentColor}
+                  bgClass={cfg.bgClass}
                   expandedContent={ExpandedComponent ? <ExpandedComponent /> : undefined}
                   provenance={
                     ["portfolio", "tokenTracker", "marketChart", "aiInsight"].includes(widgetId)

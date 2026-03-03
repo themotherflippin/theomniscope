@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FeatureGate } from "@/components/FeatureGate";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -91,6 +92,7 @@ export default function CasesListPage() {
   };
 
   return (
+    <FeatureGate feature="cases">
     <div className="max-w-4xl mx-auto px-4 pt-6 pb-8 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -255,5 +257,6 @@ export default function CasesListPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </FeatureGate>
   );
 }

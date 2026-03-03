@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FeatureGate } from "@/components/FeatureGate";
 import { motion } from "framer-motion";
 import {
   Settings, Shield, Trash2, Plus, Loader2, ToggleLeft, ToggleRight,
@@ -72,6 +73,7 @@ export default function AlertRulesPage() {
   };
 
   return (
+    <FeatureGate feature="advancedAlerts">
     <div className="max-w-4xl mx-auto">
       <header className="sticky top-0 z-40 glass-strong border-b border-border/50 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -212,5 +214,6 @@ export default function AlertRulesPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </FeatureGate>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { FeatureGate } from "@/components/FeatureGate";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -85,6 +86,7 @@ export default function TokenIntel() {
   };
 
   return (
+    <FeatureGate feature="tokenIntel">
     <div className="max-w-4xl mx-auto">
       {/* Search header — no sticky to avoid double header with AppShell */}
       <div className="px-4 pt-3 pb-2 border-b border-border/30">
@@ -316,5 +318,6 @@ export default function TokenIntel() {
         </AnimatePresence>
       </main>
     </div>
+    </FeatureGate>
   );
 }
