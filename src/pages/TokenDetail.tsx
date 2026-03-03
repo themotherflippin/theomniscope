@@ -53,7 +53,7 @@ export default function TokenDetail() {
     <div className="min-h-screen bg-background gradient-hero">
       <Disclaimer />
 
-      <header className="glass-strong border-b border-border/50 px-4 py-3">
+      <header className="px-4 py-3 border-b border-border/30">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4" />
