@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DataProvenanceBadge, type ProvenanceInfo } from "@/components/DataProvenance";
 
 export type WidgetSize = "sm" | "md" | "lg" | "full";
 
@@ -25,6 +26,7 @@ interface DashboardWidgetProps {
   className?: string;
   accentColor?: string;
   bgClass?: string;
+  provenance?: ProvenanceInfo;
 }
 
 const sizeClasses: Record<WidgetSize, string> = {
@@ -46,6 +48,7 @@ export function DashboardWidget({
   className,
   accentColor,
   bgClass,
+  provenance,
 }: DashboardWidgetProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const {
@@ -141,7 +144,14 @@ export function DashboardWidget({
           </div>
 
           {/* Content */}
-          <div className="px-3 pb-3">{children}</div>
+          <div className="px-3 pb-1.5">{children}</div>
+
+          {/* Provenance footer */}
+          {provenance && (
+            <div className="px-3 pb-2">
+              <DataProvenanceBadge provenance={provenance} compact />
+            </div>
+          )}
         </div>
       </motion.div>
 

@@ -257,6 +257,12 @@ export function useMarketData() {
     };
   }, [oppScores, highRiskTokens, tokens]);
 
+  const provenance = useMemo(() => ({
+    source: "CMC, DexScreener",
+    updatedAt: apiData ? Date.now() : null,
+    status: error ? "unavailable" as const : !apiData ? "degraded" as const : "ok" as const,
+  }), [apiData, error]);
+
   return {
     tokens,
     signals,
@@ -271,5 +277,6 @@ export function useMarketData() {
     markAllRead: alertStore.markAllRead,
     isLoading,
     error,
+    provenance,
   };
 }

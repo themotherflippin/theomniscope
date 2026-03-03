@@ -161,7 +161,7 @@ function saveWidgetOrder(order: string[]) {
 
 export default function CommandCenter() {
   const navigate = useNavigate();
-  const { unreadAlerts } = useMarketData();
+  const { unreadAlerts, provenance: marketProvenance } = useMarketData();
   const [widgetOrder, setWidgetOrder] = useState<string[]>(loadWidgetOrder);
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -304,6 +304,13 @@ export default function CommandCenter() {
                   accentColor={config.accentColor}
                   bgClass={config.bgClass}
                   expandedContent={ExpandedComponent ? <ExpandedComponent /> : undefined}
+                  provenance={
+                    ["portfolio", "tokenTracker", "marketChart", "aiInsight"].includes(widgetId)
+                      ? marketProvenance
+                      : widgetId === "alerts"
+                        ? { source: "Internal DB", updatedAt: Date.now(), status: "ok" as const }
+                        : undefined
+                  }
                 >
                   <Component />
                 </DashboardWidget>
