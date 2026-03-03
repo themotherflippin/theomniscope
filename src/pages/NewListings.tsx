@@ -92,7 +92,7 @@ export default function NewListings() {
   return (
     <div>
       <header className="sticky top-0 z-40 glass-strong border-b border-border/50 px-4 py-3">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-2">
           <Rocket className="w-4 h-4 text-warning" />
           <h1 className="text-base font-display font-bold text-foreground tracking-tight">
             {t('newListings.title')}
@@ -101,6 +101,9 @@ export default function NewListings() {
             {newTokens.length} {t('newListings.detected')}
           </Badge>
         </div>
+        <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
+          🚀 Tokens récemment listés sur les DEX. Les plus récents apparaissent en premier. Attention, les nouveaux tokens comportent des risques élevés.
+        </p>
 
         {/* Time filter */}
         <div className="flex gap-1.5 mb-2 overflow-x-auto scrollbar-none">

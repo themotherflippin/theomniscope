@@ -128,6 +128,11 @@ export default function AlertsPage() {
           )}
         </div>
 
+        {/* Info description */}
+        <p className="px-4 pb-2 text-[10px] text-muted-foreground leading-relaxed">
+          📡 Surveillance en temps réel des mouvements de prix, signaux de risque et activité des baleines sur vos tokens et wallets suivis.
+        </p>
+
         {/* Filters */}
         <AnimatePresence>
           {showFilters && (
@@ -190,6 +195,15 @@ export default function AlertsPage() {
           )}
         </AnimatePresence>
       </header>
+
+      {/* Info banner */}
+      <div className="px-4 pt-3">
+        <div className="rounded-xl bg-primary/5 border border-primary/10 px-3 py-2.5">
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            📡 Les alertes surveillent en temps réel les mouvements de prix, les signaux de risque et l'activité des baleines sur vos tokens et wallets suivis.
+          </p>
+        </div>
+      </div>
 
       {/* Alert list grouped by time */}
       <main className="px-3 py-2 pb-24">
