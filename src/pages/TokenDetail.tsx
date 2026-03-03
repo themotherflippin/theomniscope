@@ -14,13 +14,17 @@ import {
 } from '@/lib/formatters';
 import {
   ArrowLeft, Copy, TrendingUp, BarChart3, Users, Clock, Activity, AlertTriangle,
+  Search, Eye, Bell, Bookmark, Shield, Crown, Lock,
 } from 'lucide-react';
+import { usePremium } from '@/hooks/usePremium';
+import { AddToWatchlistButton } from '@/components/AddToWatchlistButton';
 
 export default function TokenDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tokens, signals, risks, oppScores } = useMarketData();
   const { t } = useI18n();
+  const { premium } = usePremium();
 
   const token = tokens.find(tk => tk.id === id);
   if (!token) {
@@ -166,6 +170,50 @@ export default function TokenDetail() {
           </motion.div>
         )}
 
+
+        {/* Quick Actions Bar */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          className="rounded-xl p-3 border border-border/40 bg-secondary/30 space-y-2"
+        >
+          <h3 className="text-[10px] font-display text-muted-foreground uppercase tracking-wider mb-2">Actions rapides</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline" size="sm"
+              className="h-9 text-[11px] gap-1.5 justify-start border-primary/20 bg-primary/5 hover:bg-primary/10"
+              onClick={() => navigate(`/token-intel/${token.address}?chain=${token.chain}`)}
+            >
+              {premium.isPremium ? <Eye className="w-3.5 h-3.5 text-primary" /> : <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
+              Token Intel
+              {!premium.isPremium && <Crown className="w-3 h-3 text-warning ml-auto" />}
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="h-9 text-[11px] gap-1.5 justify-start border-success/20 bg-success/5 hover:bg-success/10"
+              onClick={() => navigate(`/wallet-activity?search=${token.address}`)}
+            >
+              <Search className="w-3.5 h-3.5 text-success" />
+              Explorer
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="h-9 text-[11px] gap-1.5 justify-start border-warning/20 bg-warning/5 hover:bg-warning/10"
+              onClick={() => navigate(`/alerts?token=${token.symbol}`)}
+            >
+              {premium.isPremium ? <Bell className="w-3.5 h-3.5 text-warning" /> : <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
+              Alertes
+              {!premium.isPremium && <Crown className="w-3 h-3 text-warning ml-auto" />}
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="h-9 text-[11px] gap-1.5 justify-start border-[hsl(265_40%_50%/0.2)] bg-[hsl(265_40%_50%/0.05)] hover:bg-[hsl(265_40%_50%/0.1)]"
+              onClick={() => navigate(`/lookup?address=${token.address}`)}
+            >
+              {premium.isPremium ? <Shield className="w-3.5 h-3.5 text-[hsl(265_40%_50%)]" /> : <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
+              Investigate
+              {!premium.isPremium && <Crown className="w-3 h-3 text-warning ml-auto" />}
+            </Button>
+          </div>
+        </motion.div>
 
         {tokenSignals.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="space-y-3">
