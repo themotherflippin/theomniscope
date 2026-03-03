@@ -5,6 +5,7 @@ let alertId = 0;
 export function createAlertStore() {
   let alerts: Alert[] = [];
   let listeners: (() => void)[] = [];
+  const seenKeys = new Set<string>();
 
   function notify() {
     listeners.forEach(fn => fn());
@@ -13,6 +14,11 @@ export function createAlertStore() {
   return {
     getAlerts: () => alerts,
     addAlert: (alert: Omit<Alert, 'id' | 'timestamp' | 'read'>) => {
+      // Deduplicate by message content
+      const dedupeKey = `${alert.tokenSymbol}:${alert.type}:${alert.message}`;
+      if (seenKeys.has(dedupeKey)) return;
+      seenKeys.add(dedupeKey);
+
       alerts = [{
         ...alert,
         id: `alert-${++alertId}`,

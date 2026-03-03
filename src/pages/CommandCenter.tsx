@@ -41,9 +41,13 @@ import { QuickActionsWidget } from "@/components/dashboard/QuickActionsWidget";
 import { AlertsWidget } from "@/components/dashboard/AlertsWidget";
 import { AlertsWidgetExpanded } from "@/components/dashboard/AlertsWidgetExpanded";
 import { MarketChartWidget } from "@/components/dashboard/MarketChartWidget";
+import { MarketChartExpanded } from "@/components/dashboard/MarketChartExpanded";
 import { AiInsightWidget } from "@/components/dashboard/AiInsightWidget";
+import { AiInsightExpanded } from "@/components/dashboard/AiInsightExpanded";
 import { ActivityWidget } from "@/components/dashboard/ActivityWidget";
+import { ActivityExpanded } from "@/components/dashboard/ActivityExpanded";
 import { WatchlistWidget } from "@/components/dashboard/WatchlistWidget";
+import { TokenTrackerExpanded } from "@/components/dashboard/TokenTrackerExpanded";
 import { openAiAssistant } from "@/components/AiAssistant";
 import aiAvatar from "@/assets/ai-avatar.png";
 
@@ -84,6 +88,7 @@ const WIDGET_REGISTRY: Record<string, Omit<WidgetConfig, "id"> & { proOnly?: boo
     accentColor: "hsl(var(--success))",
     bgClass: "bg-widget-tokens",
     component: TokenTrackerWidget,
+    expandedComponent: TokenTrackerExpanded,
   },
   marketChart: {
     title: "Market",
@@ -92,6 +97,7 @@ const WIDGET_REGISTRY: Record<string, Omit<WidgetConfig, "id"> & { proOnly?: boo
     accentColor: "hsl(var(--chart-cyan))",
     bgClass: "bg-widget-market",
     component: MarketChartWidget,
+    expandedComponent: MarketChartExpanded,
   },
   alerts: {
     title: "Alerts",
@@ -109,6 +115,7 @@ const WIDGET_REGISTRY: Record<string, Omit<WidgetConfig, "id"> & { proOnly?: boo
     accentColor: "hsl(var(--primary))",
     bgClass: "bg-widget-ai",
     component: AiInsightWidget,
+    expandedComponent: AiInsightExpanded,
     proOnly: true,
   },
   activity: {
@@ -118,6 +125,7 @@ const WIDGET_REGISTRY: Record<string, Omit<WidgetConfig, "id"> & { proOnly?: boo
     accentColor: "hsl(var(--chart-red))",
     bgClass: "bg-widget-activity",
     component: ActivityWidget,
+    expandedComponent: ActivityExpanded,
     proOnly: true,
   },
   watchlist: {
