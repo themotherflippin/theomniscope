@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion, AnimatePresence } from "framer-motion";
-import { GripVertical, X, ChevronRight } from "lucide-react";
+import { GripVertical, X, ChevronRight, ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -169,6 +170,14 @@ export function DashboardWidget({
             >
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-sm">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 -ml-1"
+                    onClick={() => setModalOpen(false)}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
                   <span className="opacity-60">{icon}</span>
                   {title}
                 </DialogTitle>
