@@ -18,60 +18,70 @@ const PREMIUM_FEATURES = [
     title: { en: "Signal Compass PRO", fr: "Signal Compass PRO" },
     desc: { en: "Confidence scoring, multi-timeframe signals, and advanced strategy detection", fr: "Score de confiance, signaux multi-timeframe et détection de stratégies avancées" },
     color: "var(--primary)",
+    route: "/radar",
   },
   {
     icon: Brain,
     title: { en: "Unlimited AI Insights", fr: "Analyses IA illimitées" },
     desc: { en: "Deep on-chain analysis, risk assessment and opportunity detection powered by AI", fr: "Analyse on-chain approfondie, évaluation de risques et détection d'opportunités par IA" },
     color: "var(--chart-cyan)",
+    route: "/",
   },
   {
     icon: Eye,
     title: { en: "Smart Money Tracking", fr: "Suivi Smart Money" },
     desc: { en: "Track whale wallets, smart money flows and insider movements in real time", fr: "Suivez les baleines, les flux smart money et les mouvements d'initiés en temps réel" },
     color: "var(--success)",
+    route: "/radar",
   },
   {
     icon: Wallet,
     title: { en: "Unlimited Wallet Tracking", fr: "Suivi de wallets illimité" },
     desc: { en: "Monitor unlimited wallets across all chains with full transaction history", fr: "Surveillez un nombre illimité de wallets sur toutes les blockchains" },
     color: "var(--chart-blue)",
+    route: "/watchlists",
   },
   {
     icon: Search,
     title: { en: "Full Wallet Scanner", fr: "Scanner de Wallet Complet" },
     desc: { en: "Deep scan with counterparties, flow analysis, cluster detection", fr: "Scan en profondeur avec contreparties, flux et détection de clusters" },
     color: "var(--warning)",
+    route: "/lookup",
   },
   {
     icon: Shield,
     title: { en: "Token Intelligence", fr: "Intelligence Token" },
     desc: { en: "Bubblemaps, holder concentration, risk signals and whale tracking", fr: "Bubblemaps, concentration des détenteurs, signaux de risque et suivi de baleines" },
     color: "var(--danger)",
+    route: "/token-intel",
   },
   {
     icon: FolderOpen,
     title: { en: "Investigation Cases", fr: "Dossiers d'investigation" },
     desc: { en: "Create investigation dossiers, bookmark evidence, generate forensic reports", fr: "Créez des dossiers d'enquête, sauvegardez des preuves, générez des rapports" },
     color: "var(--chart-yellow)",
+    route: "/cases",
   },
   {
     icon: Bell,
     title: { en: "Advanced Alerts", fr: "Alertes Avancées" },
     desc: { en: "Custom alert rules for whale movements, smart money flows, and early signals", fr: "Alertes personnalisées pour mouvements de baleines et signaux précoces" },
     color: "var(--chart-purple)",
+    route: "/alerts",
   },
   {
     icon: Network,
     title: { en: "Cluster Analysis", fr: "Analyse de Clusters" },
     desc: { en: "Map wallet relationships and detect coordinated activity across chains", fr: "Cartographiez les relations entre wallets et détectez l'activité coordonnée" },
     color: "var(--chart-green)",
+    route: "/lookup",
   },
   {
     icon: BarChart3,
     title: { en: "Performance Analytics", fr: "Analytics Avancés" },
     desc: { en: "Full PnL tracking, portfolio metrics and detailed performance analysis", fr: "Suivi complet PnL, métriques de portefeuille et analyse de performance détaillée" },
     color: "var(--chart-orange)",
+    route: "/",
   },
 ];
 
@@ -180,7 +190,8 @@ export default function Premium() {
                 initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.03 * i }}
-                className="flex items-start gap-3 rounded-xl border border-border/30 bg-card/50 p-3"
+                className="flex items-start gap-3 rounded-xl border border-border/30 bg-card/50 p-3 cursor-pointer active:scale-[0.98] transition-transform"
+                onClick={() => navigate(feat.route)}
               >
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -199,6 +210,7 @@ export default function Premium() {
                     {feat.desc[l]}
                   </p>
                 </div>
+                <ChevronLeft className="w-4 h-4 text-muted-foreground/40 rotate-180 shrink-0 mt-2.5" />
               </motion.div>
             );
           })}
