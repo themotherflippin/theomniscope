@@ -23,8 +23,8 @@ export function BottomNav({ unreadAlerts = 0 }: BottomNavProps) {
   const tabs = [
     { path: "/", label: "Center", icon: LayoutDashboard, hidden: false, premiumOnly: false },
     { path: "/lookup", label: "Investigate", icon: Search, hidden: false, premiumOnly: false },
-    { path: "/activity", label: "Wallet", icon: Wallet, hidden: false, premiumOnly: false },
     { id: "hub", label: "Hub", icon: Compass, hidden: false, premiumOnly: false },
+    { path: "/activity", label: "Wallet", icon: Wallet, hidden: false, premiumOnly: false },
     { path: "/profile", label: "Settings", icon: Settings, hidden: false, premiumOnly: false },
   ].filter(t => !t.hidden);
 
