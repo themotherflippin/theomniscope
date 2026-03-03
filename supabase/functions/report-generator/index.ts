@@ -18,6 +18,54 @@ function getSupabase() {
   return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 }
 
+// ---------- Risk Engine (server-side mirror) ----------
+
+interface RiskFactor {
+  id: string;
+  label: string;
+  triggered: boolean;
+  weight: number;
+  description: string;
+}
+
+function computeRiskForReport(items: Array<Record<string, unknown>>): {
+  score: number;
+  level: string;
+  confidence: string;
+  factors: RiskFactor[];
+} {
+  const factors: RiskFactor[] = [];
+  const txs = items.filter(i => i.item_type === "tx");
+  const wallets = items.filter(i => i.item_type === "wallet");
+  const clusters = items.filter(i => i.item_type === "cluster");
+
+  // Large transfer
+  const hasLarge = txs.some(i => Number((i.data as Record<string, unknown>)?.value_native ?? 0) > 10000);
+  factors.push({ id: "large_transfer", label: "Large Abnormal Transfer", triggered: hasLarge, weight: 15, description: "Transactions exceeding 10,000 native token threshold." });
+
+  // Rapid multi-hop
+  const multiHop = wallets.length >= 3 && txs.length >= 5;
+  factors.push({ id: "rapid_multi_hop", label: "Rapid Multi-Hop Movement", triggered: multiHop, weight: 20, description: "Multiple wallets and transactions suggest rapid fund movement." });
+
+  // Flagged contract
+  const flagged = items.some(i => { const f = (i.data as Record<string, unknown>)?.riskFlags; return Array.isArray(f) && f.length > 0; });
+  factors.push({ id: "flagged_contract", label: "Flagged Contract Interaction", triggered: flagged, weight: 25, description: "Interactions with contracts having risk flags." });
+
+  // Suspicious approvals
+  const approvals = items.some(i => { const d = i.data as Record<string, unknown>; return d?.method === "approve" || d?.method === "setApprovalForAll"; });
+  factors.push({ id: "suspicious_approvals", label: "Suspicious Approval Patterns", triggered: approvals, weight: 18, description: "Token approvals granting unlimited spending access." });
+
+  // Cluster involvement
+  factors.push({ id: "cluster_involvement", label: "Cluster Involvement", triggered: clusters.length > 0, weight: 10, description: "Wallet clusters identified suggesting coordinated activity." });
+
+  const triggered = factors.filter(f => f.triggered);
+  const score = Math.min(100, triggered.reduce((s, f) => s + f.weight, 0));
+  const level = score >= 70 ? "HIGH" : score >= 30 ? "MEDIUM" : "LOW";
+  const confidence = items.length >= 10 ? "HIGH" : items.length >= 4 ? "MEDIUM" : "LOW";
+
+  return { score, level, confidence, factors };
+}
+
 // ---------- Report content builder ----------
 
 interface ReportData {
@@ -27,37 +75,45 @@ interface ReportData {
   timeline: Array<Record<string, unknown>>;
 }
 
+function pad(str: string, len: number): string {
+  return str.length >= len ? str.slice(0, len) : str + " ".repeat(len - str.length);
+}
+
 function buildTextReport(report: ReportData): string {
   const c = report.caseData;
-  const lines: string[] = [];
+  const risk = computeRiskForReport(report.items);
+  const L: string[] = [];
+  const W = 60;
+  const hr = "═".repeat(W);
+  const hr2 = "─".repeat(W);
 
-  lines.push("╔" + "═".repeat(58) + "╗");
-  lines.push("║" + " ".repeat(12) + "ORACLE INTEL — INVESTIGATION REPORT" + " ".repeat(11) + "║");
-  lines.push("╚" + "═".repeat(58) + "╝");
-  lines.push("");
-  lines.push(`Report Generated: ${new Date().toISOString()}`);
-  lines.push(`Platform: Oracle Intel — On-chain Intelligence`);
-  lines.push("");
+  L.push("╔" + hr + "╗");
+  L.push("║" + pad("  ORACLE INTEL — FORENSIC INVESTIGATION REPORT", W) + "║");
+  L.push("╚" + hr + "╝");
+  L.push("");
+  L.push(`  Generated:  ${new Date().toISOString()}`);
+  L.push(`  Platform:   Oracle Intel — On-chain Intelligence`);
+  L.push(`  Format:     Forensic Report v3.0`);
+  L.push("");
 
-  // ── Case Overview ──
-  lines.push("┌" + "─".repeat(58) + "┐");
-  lines.push("│  CASE OVERVIEW" + " ".repeat(43) + "│");
-  lines.push("└" + "─".repeat(58) + "┘");
-  lines.push(`  Title:       ${c.title}`);
-  lines.push(`  Case ID:     ${c.id}`);
-  lines.push(`  Status:      ${String(c.status).toUpperCase()}`);
-  lines.push(`  Priority:    ${String(c.priority).toUpperCase()}`);
-  lines.push(`  Chain:       ${c.chain}`);
-  lines.push(`  Created:     ${new Date(String(c.created_at)).toLocaleString()}`);
-  lines.push(`  Last Update: ${new Date(String(c.updated_at)).toLocaleString()}`);
-  if (c.description) lines.push(`  Description: ${c.description}`);
-  if (Array.isArray(c.tags) && c.tags.length > 0) lines.push(`  Tags:        ${c.tags.join(", ")}`);
-  lines.push("");
-
-  // ── Executive Summary ──
-  lines.push("┌" + "─".repeat(58) + "┐");
-  lines.push("│  EXECUTIVE SUMMARY" + " ".repeat(39) + "│");
-  lines.push("└" + "─".repeat(58) + "┘");
+  // ── 1. Executive Summary ──
+  L.push("┌" + hr2 + "┐");
+  L.push("│  1. EXECUTIVE SUMMARY" + " ".repeat(W - 23) + "│");
+  L.push("└" + hr2 + "┘");
+  L.push(`  Case Title:    ${c.title}`);
+  L.push(`  Case ID:       ${c.id}`);
+  L.push(`  Status:        ${String(c.status).toUpperCase()}`);
+  L.push(`  Priority:      ${String(c.priority).toUpperCase()}`);
+  L.push(`  Chain:         ${c.chain}`);
+  L.push(`  Created:       ${new Date(String(c.created_at)).toISOString()}`);
+  L.push(`  Last Updated:  ${new Date(String(c.updated_at)).toISOString()}`);
+  if (c.description) L.push(`  Description:   ${c.description}`);
+  if (Array.isArray(c.tags) && c.tags.length > 0) L.push(`  Tags:          ${c.tags.join(", ")}`);
+  L.push("");
+  L.push(`  RISK SCORE:    ${risk.score}/100`);
+  L.push(`  RISK LEVEL:    ${risk.level}`);
+  L.push(`  CONFIDENCE:    ${risk.confidence}`);
+  L.push("");
 
   const wallets = report.items.filter(i => i.item_type === "wallet");
   const tokens = report.items.filter(i => i.item_type === "token");
@@ -65,44 +121,45 @@ function buildTextReport(report: ReportData): string {
   const alerts = report.items.filter(i => i.item_type === "alert");
   const clusters = report.items.filter(i => i.item_type === "cluster");
 
-  lines.push(`  Total evidence items: ${report.items.length}`);
-  lines.push(`  Investigator notes:   ${report.notes.length}`);
-  lines.push(`  Timeline events:      ${report.timeline.length}`);
-  lines.push("");
-  if (wallets.length) lines.push(`  ▸ ${wallets.length} wallet address(es)`);
-  if (tokens.length) lines.push(`  ▸ ${tokens.length} token contract(s)`);
-  if (txs.length) lines.push(`  ▸ ${txs.length} transaction(s)`);
-  if (alerts.length) lines.push(`  ▸ ${alerts.length} alert(s)`);
-  if (clusters.length) lines.push(`  ▸ ${clusters.length} cluster analysis(es)`);
-  lines.push("");
+  L.push(`  Evidence:      ${report.items.length} items total`);
+  if (wallets.length) L.push(`    ▸ ${wallets.length} wallet address(es)`);
+  if (tokens.length)  L.push(`    ▸ ${tokens.length} token contract(s)`);
+  if (txs.length)     L.push(`    ▸ ${txs.length} transaction(s)`);
+  if (alerts.length)  L.push(`    ▸ ${alerts.length} alert(s)`);
+  if (clusters.length) L.push(`    ▸ ${clusters.length} cluster(s)`);
+  L.push(`  Notes:         ${report.notes.length}`);
+  L.push(`  Timeline:      ${report.timeline.length} events`);
+  L.push("");
 
-  // ── Risk Assessment ──
-  const hasRiskData = report.items.some(i => {
-    const data = (i.data ?? {}) as Record<string, unknown>;
-    return data.riskFlags || data.riskScore || data.top10Pct;
-  });
+  // ── 2. Risk Assessment ──
+  L.push("┌" + hr2 + "┐");
+  L.push("│  2. RISK ASSESSMENT" + " ".repeat(W - 21) + "│");
+  L.push("└" + hr2 + "┘");
+  L.push("");
 
-  if (hasRiskData) {
-    lines.push("┌" + "─".repeat(58) + "┐");
-    lines.push("│  RISK ASSESSMENT" + " ".repeat(41) + "│");
-    lines.push("└" + "─".repeat(58) + "┘");
-    for (const item of report.items) {
-      const data = (item.data ?? {}) as Record<string, unknown>;
-      if (data.riskScore !== undefined || data.riskFlags) {
-        lines.push(`  ${item.item_type.toUpperCase()}: ${item.ref}`);
-        if (data.riskScore !== undefined) lines.push(`    Risk Score: ${data.riskScore}/100`);
-        if (Array.isArray(data.riskFlags)) {
-          for (const flag of data.riskFlags as Array<{ label: string; severity: string }>) {
-            lines.push(`    ⚠ [${flag.severity?.toUpperCase() ?? "MEDIUM"}] ${flag.label}`);
-          }
-        }
-        lines.push("");
-      }
+  const triggered = risk.factors.filter(f => f.triggered);
+  if (triggered.length === 0) {
+    L.push("  No risk factors triggered from available evidence.");
+  } else {
+    for (const f of triggered) {
+      L.push(`  ⚠ [WEIGHT: ${f.weight}] ${f.label}`);
+      L.push(`    ${f.description}`);
+      L.push("");
     }
   }
 
-  // ── Evidence Details ──
-  const sections: { title: string; items: Array<Record<string, unknown>>; prefix: string }[] = [
+  // Non-triggered factors
+  const notTriggered = risk.factors.filter(f => !f.triggered);
+  if (notTriggered.length > 0) {
+    L.push("  Checked but not triggered:");
+    for (const f of notTriggered) {
+      L.push(`    ✓ ${f.label}`);
+    }
+  }
+  L.push("");
+
+  // ── 3. Evidence Table ──
+  const sections = [
     { title: "WALLET EVIDENCE", items: wallets, prefix: "Address" },
     { title: "TOKEN EVIDENCE", items: tokens, prefix: "Contract" },
     { title: "TRANSACTION EVIDENCE", items: txs, prefix: "Hash" },
@@ -110,120 +167,130 @@ function buildTextReport(report: ReportData): string {
     { title: "CLUSTER ANALYSIS", items: clusters, prefix: "Cluster ID" },
   ];
 
+  L.push("┌" + hr2 + "┐");
+  L.push("│  3. EVIDENCE DETAILS" + " ".repeat(W - 22) + "│");
+  L.push("└" + hr2 + "┘");
+
   for (const section of sections) {
     if (section.items.length === 0) continue;
-
-    lines.push("┌" + "─".repeat(58) + "┐");
-    lines.push(`│  ${section.title}` + " ".repeat(Math.max(0, 57 - section.title.length)) + "│");
-    lines.push("└" + "─".repeat(58) + "┘");
+    L.push("");
+    L.push(`  ── ${section.title} (${section.items.length}) ──`);
 
     for (const item of section.items) {
-      lines.push(`  ${section.prefix}: ${item.ref}`);
-      if (item.title) lines.push(`  Label:   ${item.title}`);
-
+      L.push(`  ${section.prefix}: ${item.ref}`);
+      if (item.title) L.push(`  Label:   ${item.title}`);
       const data = (item.data ?? {}) as Record<string, unknown>;
-      const dataKeys = Object.keys(data).filter(k => data[k] !== null && data[k] !== undefined);
-      for (const key of dataKeys) {
-        const val = data[key];
+      for (const [key, val] of Object.entries(data)) {
+        if (val === null || val === undefined) continue;
         const formatted = typeof val === "object" ? JSON.stringify(val) : String(val);
-        lines.push(`  ${key}: ${formatted}`);
+        L.push(`  ${key}: ${formatted}`);
       }
-      lines.push("");
+      L.push("");
     }
   }
 
-  // ── Investigator Notes ──
+  // ── 4. Investigator Notes ──
   if (report.notes.length) {
-    lines.push("┌" + "─".repeat(58) + "┐");
-    lines.push("│  INVESTIGATOR NOTES" + " ".repeat(38) + "│");
-    lines.push("└" + "─".repeat(58) + "┘");
+    L.push("┌" + hr2 + "┐");
+    L.push("│  4. INVESTIGATOR NOTES" + " ".repeat(W - 24) + "│");
+    L.push("└" + hr2 + "┘");
     for (const n of report.notes) {
-      const date = new Date(String(n.created_at)).toLocaleString();
-      lines.push(`  ┌ ${date}`);
-      const body = String(n.body);
-      // Wrap long notes
-      const noteLines = body.split("\n");
-      for (const nl of noteLines) {
-        lines.push(`  │ ${nl}`);
+      L.push(`  ┌ ${new Date(String(n.created_at)).toISOString()}`);
+      for (const line of String(n.body).split("\n")) {
+        L.push(`  │ ${line}`);
       }
-      lines.push(`  └${"─".repeat(40)}`);
-      lines.push("");
+      L.push(`  └${"─".repeat(40)}`);
+      L.push("");
     }
   }
 
-  // ── Timeline ──
+  // ── 5. Timeline ──
   if (report.timeline.length) {
-    lines.push("┌" + "─".repeat(58) + "┐");
-    lines.push("│  TIMELINE" + " ".repeat(48) + "│");
-    lines.push("└" + "─".repeat(58) + "┘");
+    L.push("┌" + hr2 + "┐");
+    L.push("│  5. EVENT TIMELINE" + " ".repeat(W - 20) + "│");
+    L.push("└" + hr2 + "┘");
     for (const t of report.timeline) {
-      const date = new Date(String(t.time)).toLocaleString();
-      const type = String(t.type).toUpperCase().padEnd(12);
-      lines.push(`  ${date}  │ ${type} │ ${t.title}`);
-      if (t.details) lines.push(`  ${" ".repeat(22)}│ ${" ".repeat(13)}│ ${t.details}`);
+      const ts = new Date(String(t.time)).toISOString();
+      const type = String(t.type).toUpperCase().padEnd(14);
+      L.push(`  ${ts}  │ ${type} │ ${t.title}`);
+      if (t.details) L.push(`  ${" ".repeat(26)}│ ${" ".repeat(15)}│ ${t.details}`);
     }
-    lines.push("");
+    L.push("");
   }
 
-  // ── Methodology ──
-  lines.push("┌" + "─".repeat(58) + "┐");
-  lines.push("│  METHODOLOGY & DATA SOURCES" + " ".repeat(30) + "│");
-  lines.push("└" + "─".repeat(58) + "┘");
-  lines.push("  Data Sources:");
-  lines.push("    • On-chain transaction data (EVM-compatible chains)");
-  lines.push("    • CoinMarketCap (market data, pricing)");
-  lines.push("    • DexScreener (DEX trading data)");
-  lines.push("    • Moralis (wallet activity, token transfers)");
-  lines.push("  Analysis Methods:");
-  lines.push("    • Cluster detection via shared funding patterns");
-  lines.push("    • Risk scoring: liquidity, concentration, patterns");
-  lines.push("    • Smart money tracking via historical PnL heuristics");
-  lines.push("");
+  // ── 6. Methodology ──
+  L.push("┌" + hr2 + "┐");
+  L.push("│  6. METHODOLOGY & DATA SOURCES" + " ".repeat(W - 32) + "│");
+  L.push("└" + hr2 + "┘");
+  L.push("  Data Sources:");
+  L.push("    • On-chain transaction data (EVM-compatible chains)");
+  L.push("    • CoinMarketCap (market data, pricing)");
+  L.push("    • DexScreener (DEX trading data)");
+  L.push("    • Moralis (wallet activity, token transfers)");
+  L.push("  Risk Analysis:");
+  L.push("    • Modular risk factor engine (7 heuristics)");
+  L.push("    • Weighted scoring: sum of triggered factor weights, capped at 100");
+  L.push("    • Confidence based on evidence volume (Low <4, Medium 4-9, High ≥10)");
+  L.push("  Cluster Detection:");
+  L.push("    • Shared funding patterns, temporal correlation, interaction strength");
+  L.push("");
+
+  // ── 7. Data Provenance ──
+  L.push("┌" + hr2 + "┐");
+  L.push("│  7. DATA PROVENANCE" + " ".repeat(W - 21) + "│");
+  L.push("└" + hr2 + "┘");
+  L.push(`  Report generated:   ${new Date().toISOString()}`);
+  L.push(`  Chain analyzed:     ${c.chain}`);
+  L.push(`  Case ID:            ${c.id}`);
+  L.push(`  Evidence items:     ${report.items.length}`);
+  L.push(`  Risk engine:        v3.0 (modular factors)`);
+  L.push(`  Data freshness:     As of evidence collection timestamps`);
+  L.push("");
 
   // ── Disclaimer ──
-  lines.push("╔" + "═".repeat(58) + "╗");
-  lines.push("║  DISCLAIMER" + " ".repeat(46) + "║");
-  lines.push("╠" + "═".repeat(58) + "╣");
-  lines.push("║  This report contains on-chain intelligence signals    ║");
-  lines.push("║  and probabilistic risk indicators. All findings are   ║");
-  lines.push("║  based on publicly available blockchain data.          ║");
-  lines.push("║                                                        ║");
-  lines.push("║  Risk flags represent statistical patterns, NOT        ║");
-  lines.push("║  definitive conclusions about illicit activity.        ║");
-  lines.push("║                                                        ║");
-  lines.push("║  This is NOT financial or legal advice.                ║");
-  lines.push("╚" + "═".repeat(58) + "╝");
-  lines.push("");
-  lines.push(`Generated: ${new Date().toISOString()}`);
-  lines.push(`Oracle Intel Platform — Chain: ${c.chain}`);
-  lines.push(`Case ID: ${c.id}`);
+  L.push("╔" + hr + "╗");
+  L.push("║  DISCLAIMER" + " ".repeat(W - 13) + "║");
+  L.push("╠" + hr + "╣");
+  L.push("║  This report contains on-chain intelligence signals and     ║");
+  L.push("║  probabilistic risk indicators based on publicly available  ║");
+  L.push("║  blockchain data. Risk flags represent statistical          ║");
+  L.push("║  patterns, NOT definitive conclusions.                      ║");
+  L.push("║                                                             ║");
+  L.push("║  This is NOT financial or legal advice.                     ║");
+  L.push("╚" + hr + "╝");
 
-  return lines.join("\n");
+  return L.join("\n");
 }
 
 function buildJsonExport(report: ReportData): Record<string, unknown> {
-  const wallets = report.items.filter(i => i.item_type === "wallet");
-  const tokens = report.items.filter(i => i.item_type === "token");
-  const txs = report.items.filter(i => i.item_type === "tx");
-
+  const risk = computeRiskForReport(report.items);
   return {
-    version: "2.0",
+    version: "3.0",
     generated_at: new Date().toISOString(),
     platform: "Oracle Intel",
     case: report.caseData,
+    risk_assessment: {
+      score: risk.score,
+      level: risk.level,
+      confidence: risk.confidence,
+      triggered_factors: risk.factors.filter(f => f.triggered),
+      all_factors: risk.factors,
+    },
     summary: {
       total_evidence: report.items.length,
       total_notes: report.notes.length,
-      wallets_count: wallets.length,
-      tokens_count: tokens.length,
-      transactions_count: txs.length,
-      priority: report.caseData.priority,
-      status: report.caseData.status,
+      wallets_count: report.items.filter(i => i.item_type === "wallet").length,
+      tokens_count: report.items.filter(i => i.item_type === "token").length,
+      transactions_count: report.items.filter(i => i.item_type === "tx").length,
     },
     evidence: report.items,
     notes: report.notes,
     timeline: report.timeline,
-    data_sources: ["on-chain", "CoinMarketCap", "DexScreener", "Moralis"],
+    data_provenance: {
+      sources: ["on-chain", "CoinMarketCap", "DexScreener", "Moralis"],
+      risk_engine_version: "3.0",
+      chain: report.caseData.chain,
+    },
     disclaimer: "This report contains on-chain intelligence signals and probabilistic risk indicators based on publicly available blockchain data. This is not financial or legal advice.",
   };
 }
@@ -242,7 +309,6 @@ serve(async (req) => {
       const { case_id } = body;
       if (!case_id) return json({ error: "case_id required" }, 400);
 
-      // Create job
       const { data: job, error: jobErr } = await supabase
         .from("report_jobs")
         .insert({ case_id, status: "running" })
@@ -250,7 +316,6 @@ serve(async (req) => {
         .single();
       if (jobErr || !job) throw new Error(jobErr?.message ?? "Failed to create job");
 
-      // Fetch all case data
       const [caseRes, itemsRes, notesRes] = await Promise.all([
         supabase.from("cases").select("*").eq("id", case_id).single(),
         supabase.from("case_items").select("*").eq("case_id", case_id).order("created_at"),
@@ -262,83 +327,42 @@ serve(async (req) => {
         return json({ error: "Case not found" }, 404);
       }
 
-      // Build timeline
       const timeline: Array<Record<string, unknown>> = [];
-      timeline.push({
-        time: caseRes.data.created_at,
-        type: "case_created",
-        title: "Case opened",
-        details: caseRes.data.title,
-      });
-
+      timeline.push({ time: caseRes.data.created_at, type: "case_created", title: "Case opened", details: caseRes.data.title });
       for (const item of itemsRes.data ?? []) {
-        timeline.push({
-          time: item.created_at,
-          type: item.item_type,
-          title: `Evidence: ${item.item_type}`,
-          details: item.title ?? item.ref,
-        });
+        timeline.push({ time: item.created_at, type: item.item_type, title: `Evidence: ${item.item_type}`, details: item.title ?? item.ref });
       }
-
       for (const note of notesRes.data ?? []) {
-        timeline.push({
-          time: note.created_at,
-          type: "note",
-          title: "Note added",
-          details: String(note.body).slice(0, 200),
-        });
+        timeline.push({ time: note.created_at, type: "note", title: "Note added", details: String(note.body).slice(0, 200) });
       }
-
       timeline.sort((a, b) => new Date(String(a.time)).getTime() - new Date(String(b.time)).getTime());
 
-      const reportData: ReportData = {
-        caseData: caseRes.data,
-        items: itemsRes.data ?? [],
-        notes: notesRes.data ?? [],
-        timeline,
-      };
+      const reportData: ReportData = { caseData: caseRes.data, items: itemsRes.data ?? [], notes: notesRes.data ?? [], timeline };
 
-      // Generate text report (as PDF-like text file)
       const textContent = buildTextReport(reportData);
       const jsonContent = JSON.stringify(buildJsonExport(reportData), null, 2);
 
-      // Upload to storage
       const timestamp = Date.now();
-      const pdfPath = `case-${case_id}/report-${timestamp}.txt`;
+      const txtPath = `case-${case_id}/report-${timestamp}.txt`;
       const jsonPath = `case-${case_id}/report-${timestamp}.json`;
 
-      const [pdfUpload, jsonUpload] = await Promise.all([
-        supabase.storage.from("reports").upload(pdfPath, new Blob([textContent], { type: "text/plain" }), {
-          contentType: "text/plain",
-          upsert: true,
-        }),
-        supabase.storage.from("reports").upload(jsonPath, new Blob([jsonContent], { type: "application/json" }), {
-          contentType: "application/json",
-          upsert: true,
-        }),
+      const [txtUpload, jsonUpload] = await Promise.all([
+        supabase.storage.from("reports").upload(txtPath, new Blob([textContent], { type: "text/plain" }), { contentType: "text/plain", upsert: true }),
+        supabase.storage.from("reports").upload(jsonPath, new Blob([jsonContent], { type: "application/json" }), { contentType: "application/json", upsert: true }),
       ]);
 
-      if (pdfUpload.error || jsonUpload.error) {
-        const errMsg = pdfUpload.error?.message ?? jsonUpload.error?.message ?? "Upload failed";
+      if (txtUpload.error || jsonUpload.error) {
+        const errMsg = txtUpload.error?.message ?? jsonUpload.error?.message ?? "Upload failed";
         await supabase.from("report_jobs").update({ status: "failed", error_message: errMsg }).eq("id", job.id);
         return json({ error: errMsg }, 500);
       }
 
-      const { data: pdfUrl } = supabase.storage.from("reports").getPublicUrl(pdfPath);
+      const { data: txtUrl } = supabase.storage.from("reports").getPublicUrl(txtPath);
       const { data: jsonUrl } = supabase.storage.from("reports").getPublicUrl(jsonPath);
 
-      await supabase.from("report_jobs").update({
-        status: "done",
-        output_url: pdfUrl.publicUrl,
-        output_json_url: jsonUrl.publicUrl,
-      }).eq("id", job.id);
+      await supabase.from("report_jobs").update({ status: "done", output_url: txtUrl.publicUrl, output_json_url: jsonUrl.publicUrl }).eq("id", job.id);
 
-      return json({
-        job_id: job.id,
-        status: "done",
-        output_url: pdfUrl.publicUrl,
-        output_json_url: jsonUrl.publicUrl,
-      });
+      return json({ job_id: job.id, status: "done", output_url: txtUrl.publicUrl, output_json_url: jsonUrl.publicUrl });
     }
 
     if (action === "get_status") {
