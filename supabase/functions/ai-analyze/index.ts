@@ -7,11 +7,13 @@ const corsHeaders = {
 };
 
 interface AnalyzeRequest {
-  contextType: "wallet" | "token" | "case" | "alert";
-  chain: string;
-  ref: string;
-  prompt: string;
-  dataSnapshots: Record<string, unknown>;
+  action?: "transcribe";
+  audio?: string;
+  contextType?: "wallet" | "token" | "case" | "alert";
+  chain?: string;
+  ref?: string;
+  prompt?: string;
+  dataSnapshots?: Record<string, unknown>;
 }
 
 const SYSTEM_PROMPT = `You are Oracle Intel AI, an expert blockchain intelligence analyst specializing in on-chain investigation for the Cronos ecosystem.
@@ -35,6 +37,59 @@ serve(async (req) => {
 
   try {
     const body: AnalyzeRequest = await req.json();
+
+    // === Transcription mode ===
+    if (body.action === "transcribe" && body.audio) {
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) {
+        return new Response(
+          JSON.stringify({ error: "AI not configured." }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Use Gemini multimodal to transcribe audio
+      const transcribeResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Transcribe the following audio exactly. Return ONLY the transcribed text, nothing else. If the audio is in French, return it in the original language." },
+                {
+                  type: "input_audio",
+                  input_audio: { data: body.audio, format: "webm" },
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (!transcribeResp.ok) {
+        const errText = await transcribeResp.text();
+        console.error("Transcription error:", transcribeResp.status, errText);
+        return new Response(
+          JSON.stringify({ error: "Transcription failed" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const transcribeData = await transcribeResp.json();
+      const text = transcribeData.choices?.[0]?.message?.content || "";
+      return new Response(
+        JSON.stringify({ text }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // === Analysis mode ===
     const { contextType, chain, ref, prompt, dataSnapshots } = body;
 
     if (!contextType || !ref || !prompt) {
