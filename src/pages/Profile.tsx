@@ -114,7 +114,7 @@ function QuickNavRow({ icon: Icon, label, subtitle, onClick, trailing }: {
 export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
   const { t, lang, toggleLang } = useI18n();
   const navigate = useNavigate();
-  const isAdmin = useAdminStatus();
+  const { isAdmin } = useAdminStatus();
   const { premium } = usePremium();
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [expandedWidget, setExpandedWidget] = useState<string | null>(null);
