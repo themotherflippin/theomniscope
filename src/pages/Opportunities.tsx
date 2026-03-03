@@ -69,7 +69,7 @@ export default function Opportunities({ prefs }: OppsProps) {
           </button>
         </div>
         <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
-          🎯 Chaque token est noté automatiquement selon son potentiel, son risque et son momentum. Plus le score est élevé, plus l'opportunité est forte.
+          🎯 {t('opps.desc')}
         </p>
 
         <div className="flex items-center gap-1.5 mb-2">

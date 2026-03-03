@@ -21,12 +21,12 @@ export function BottomNav({ unreadAlerts = 0 }: BottomNavProps) {
   const isSimple = prefs.mode === "simple";
 
   const tabs = [
-    { path: "/", label: "Center", icon: LayoutDashboard, hidden: false, premiumOnly: false },
-    { path: "/lookup", label: "Investigate", icon: Search, hidden: false, premiumOnly: false },
-    { id: "hub", label: "Hub", icon: Compass, hidden: false, premiumOnly: false },
-    { path: "/activity", label: "Wallet", icon: Wallet, hidden: false, premiumOnly: false },
-    { path: "/profile", label: "Settings", icon: Settings, hidden: false, premiumOnly: false },
-  ].filter(t => !t.hidden);
+    { path: "/", label: t('nav.center'), icon: LayoutDashboard, hidden: false, premiumOnly: false },
+    { path: "/lookup", label: t('nav.investigate'), icon: Search, hidden: false, premiumOnly: false },
+    { id: "hub", label: t('nav.hub'), icon: Compass, hidden: false, premiumOnly: false },
+    { path: "/activity", label: t('nav.wallet'), icon: Wallet, hidden: false, premiumOnly: false },
+    { path: "/profile", label: t('nav.settings'), icon: Settings, hidden: false, premiumOnly: false },
+  ].filter(tab => !tab.hidden);
 
   if (location.pathname.startsWith("/token/")) return null;
 

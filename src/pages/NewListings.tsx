@@ -102,7 +102,7 @@ export default function NewListings() {
           </Badge>
         </div>
         <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
-          🚀 Tokens récemment listés sur les DEX. Les plus récents apparaissent en premier. Attention, les nouveaux tokens comportent des risques élevés.
+          🚀 {t('newListings.desc')}
         </p>
 
         {/* Time filter */}

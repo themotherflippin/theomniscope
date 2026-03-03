@@ -128,7 +128,7 @@ export default function Radar({ prefs }: RadarProps) {
           </Badge>
         </div>
         <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
-          📊 Vue en temps réel de tous les tokens détectés. Triez par volume, variation, liquidité ou risque pour trouver les meilleures opportunités.
+          📊 {t('radar.desc')}
         </p>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
