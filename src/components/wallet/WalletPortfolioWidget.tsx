@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWalletPortfolio, type TokenHolding, type NFTHolding } from "@/hooks/useWalletPortfolio";
+import { useI18n } from "@/lib/i18n";
 
 function shortenAddr(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
@@ -122,13 +123,13 @@ function PortfolioSkeleton() {
 }
 
 // --- Empty ---
-function EmptyPortfolio({ address }: { address: string }) {
+function EmptyPortfolio({ address, t }: { address: string; t: (k: any) => string }) {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
       <Wallet className="w-10 h-10 text-muted-foreground/40 mb-3" />
-      <p className="text-sm font-medium text-muted-foreground">Wallet vide sur Cronos</p>
+      <p className="text-sm font-medium text-muted-foreground">{t('wallet.emptyCronos')}</p>
       <p className="text-[11px] text-muted-foreground/60 mt-1 max-w-xs">
-        Ce wallet ne contient aucun CRO, token ERC20 ou NFT détecté sur la chaîne Cronos.
+        {t('wallet.emptyDesc')}
       </p>
       <a
         href={`https://cronoscan.com/address/${address}`}
@@ -136,7 +137,7 @@ function EmptyPortfolio({ address }: { address: string }) {
         rel="noopener noreferrer"
         className="text-[10px] text-primary mt-3 flex items-center gap-1 hover:underline"
       >
-        <ExternalLink className="w-3 h-3" /> Vérifier sur Cronoscan
+        <ExternalLink className="w-3 h-3" /> {t('wallet.checkCronoscan')}
       </a>
     </div>
   );
@@ -149,6 +150,7 @@ interface Props {
 
 export default function WalletPortfolioWidget({ address }: Props) {
   const { data, isLoading, isError, error } = useWalletPortfolio(address);
+  const { t } = useI18n();
 
   if (!address) return null;
   if (isLoading) return <PortfolioSkeleton />;
@@ -159,12 +161,10 @@ export default function WalletPortfolioWidget({ address }: Props) {
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <ShieldAlert className="w-8 h-8 text-danger/60 mb-2" />
         <p className="text-xs text-danger">
-          {isQuota ? "Quota API atteint — réessayez demain" : msg || "Erreur de chargement"}
+          {isQuota ? t('wallet.quotaReached') : msg || t('wallet.loadError')}
         </p>
         <p className="text-[10px] text-muted-foreground mt-1">
-          {isQuota
-            ? "Le quota journalier de requêtes on-chain a été épuisé."
-            : "Vérifiez l'adresse et réessayez."}
+          {isQuota ? t('wallet.quotaDesc') : t('wallet.checkAddress')}
         </p>
       </div>
     );
@@ -175,7 +175,7 @@ export default function WalletPortfolioWidget({ address }: Props) {
   const hasNfts = data.nfts.length > 0;
 
   if (!hasTokens && !hasNfts && data.nativeBalance === "0") {
-    return <EmptyPortfolio address={address} />;
+    return <EmptyPortfolio address={address} t={t} />;
   }
 
   return (
@@ -205,7 +205,7 @@ export default function WalletPortfolioWidget({ address }: Props) {
         </div>
         {data.totalUsdValue > 0 && (
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            Valeur estimée : <span className="font-semibold text-foreground">{formatUsd(data.totalUsdValue)}</span>
+            {t('wallet.estimatedValue')} <span className="font-semibold text-foreground">{formatUsd(data.totalUsdValue)}</span>
           </p>
         )}
       </div>

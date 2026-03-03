@@ -10,6 +10,7 @@ import {
 import { motion } from "framer-motion";
 import { usePremium } from "@/hooks/usePremium";
 import { useUserPreferences } from "@/lib/userPreferences";
+import { useI18n } from "@/lib/i18n";
 import PremiumUpgradeModal from "./PremiumUpgradeModal";
 
 interface MoreSheetProps {
@@ -17,21 +18,22 @@ interface MoreSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const hubItems = [
-  { icon: Eye, label: "Watchlists", path: "/watchlists", color: "from-blue-500/20 to-blue-600/5", iconColor: "text-blue-500", proOnly: false, premiumOnly: false },
-  { icon: Zap, label: "Alert Rules", path: "/alert-rules", color: "from-amber-500/20 to-amber-600/5", iconColor: "text-amber-500", proOnly: false, premiumOnly: false },
-  { icon: List, label: "Radar", path: "/radar", color: "from-emerald-500/20 to-emerald-600/5", iconColor: "text-emerald-500", proOnly: false, premiumOnly: false },
-  { icon: Network, label: "Clusters", path: "/intel", color: "from-violet-500/20 to-violet-600/5", iconColor: "text-violet-500", proOnly: true, premiumOnly: true },
-  { icon: BarChart3, label: "Opportunities", path: "/opportunities", color: "from-cyan-500/20 to-cyan-600/5", iconColor: "text-cyan-500", proOnly: true, premiumOnly: false },
-  { icon: BookOpen, label: "New Listings", path: "/new-listings", color: "from-rose-500/20 to-rose-600/5", iconColor: "text-rose-500", proOnly: false, premiumOnly: false },
-];
-
 export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
   const navigate = useNavigate();
   const { premium } = usePremium();
   const { prefs } = useUserPreferences();
+  const { t } = useI18n();
   const [showUpgrade, setShowUpgrade] = useState(false);
   const isSimple = prefs.mode === "simple";
+
+  const hubItems = [
+    { icon: Eye, label: t('hub.watchlists'), path: "/watchlists", color: "from-blue-500/20 to-blue-600/5", iconColor: "text-blue-500", proOnly: false, premiumOnly: false },
+    { icon: Zap, label: t('hub.alertRules'), path: "/alert-rules", color: "from-amber-500/20 to-amber-600/5", iconColor: "text-amber-500", proOnly: false, premiumOnly: false },
+    { icon: List, label: t('hub.radar'), path: "/radar", color: "from-emerald-500/20 to-emerald-600/5", iconColor: "text-emerald-500", proOnly: false, premiumOnly: false },
+    { icon: Network, label: t('hub.clusters'), path: "/intel", color: "from-violet-500/20 to-violet-600/5", iconColor: "text-violet-500", proOnly: true, premiumOnly: true },
+    { icon: BarChart3, label: t('hub.opportunities'), path: "/opportunities", color: "from-cyan-500/20 to-cyan-600/5", iconColor: "text-cyan-500", proOnly: true, premiumOnly: false },
+    { icon: BookOpen, label: t('hub.newListings'), path: "/new-listings", color: "from-rose-500/20 to-rose-600/5", iconColor: "text-rose-500", proOnly: false, premiumOnly: false },
+  ];
 
   const go = (path: string) => {
     onOpenChange(false);
@@ -48,9 +50,9 @@ export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh] px-4 pb-10">
           <SheetHeader className="pb-2">
-            <SheetTitle className="text-sm font-display tracking-wide">Hub</SheetTitle>
+            <SheetTitle className="text-sm font-display tracking-wide">{t('hub.title')}</SheetTitle>
             <p className="text-[10px] text-muted-foreground leading-relaxed">
-              Accédez rapidement à tous vos outils d'analyse on-chain.
+              {t('hub.desc')}
             </p>
           </SheetHeader>
 
@@ -88,7 +90,7 @@ export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
             >
               <p className="text-[10px] text-muted-foreground">
                 <Crown className="w-3 h-3 inline mr-1" />
-                Switch to <span className="font-bold text-foreground">Pro mode</span> in Settings to see all tools
+                {t('hub.proModeHint')}
               </p>
             </motion.div>
           )}

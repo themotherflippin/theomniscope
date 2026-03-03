@@ -282,6 +282,80 @@ const translations = {
   'error.apiDown': { en: 'Service temporarily unavailable', fr: 'Service temporairement indisponible' },
   'error.rateLimit': { en: 'Rate limit reached — please wait', fr: 'Limite de requêtes atteinte — veuillez patienter' },
   'error.notIndexed': { en: 'This address is not yet indexed', fr: 'Cette adresse n\'est pas encore indexée' },
+
+  // Bottom Nav
+  'nav.center': { en: 'Center', fr: 'Centre' },
+  'nav.investigate': { en: 'Investigate', fr: 'Enquêter' },
+  'nav.hub': { en: 'Hub', fr: 'Hub' },
+  'nav.wallet': { en: 'Wallet', fr: 'Wallet' },
+  'nav.settings': { en: 'Settings', fr: 'Réglages' },
+
+  // MoreSheet / Hub
+  'hub.title': { en: 'Hub', fr: 'Hub' },
+  'hub.desc': { en: 'Quickly access all your on-chain analysis tools.', fr: 'Accédez rapidement à tous vos outils d\'analyse on-chain.' },
+  'hub.watchlists': { en: 'Watchlists', fr: 'Listes de suivi' },
+  'hub.alertRules': { en: 'Alert Rules', fr: 'Règles d\'alertes' },
+  'hub.radar': { en: 'Radar', fr: 'Radar' },
+  'hub.clusters': { en: 'Clusters', fr: 'Clusters' },
+  'hub.opportunities': { en: 'Opportunities', fr: 'Opportunités' },
+  'hub.newListings': { en: 'New Listings', fr: 'Nouveaux Listings' },
+  'hub.proModeHint': { en: 'Switch to Pro mode in Settings to see all tools', fr: 'Passez en mode Pro dans les Réglages pour voir tous les outils' },
+
+  // Wallet Explorer
+  'wallet.explorerTitle': { en: 'Wallet Explorer', fr: 'Explorateur Wallet' },
+  'wallet.explorerDesc': { en: 'Explore the contents of a wallet: tokens, NFTs, on-chain activity and associated clusters.', fr: 'Explorez le contenu d\'un wallet : tokens, NFTs, activité on-chain et clusters associés.' },
+  'wallet.placeholder': { en: '0x... Cronos wallet address', fr: '0x... adresse wallet Cronos' },
+  'wallet.explore': { en: 'Explore', fr: 'Explorer' },
+  'wallet.enterAddress': { en: 'Enter a wallet address', fr: 'Entrez une adresse wallet' },
+  'wallet.enterAddressDesc': { en: 'View its tokens, NFTs, transactions and on-chain relationships', fr: 'Visualisez ses tokens, NFTs, transactions et relations on-chain' },
+  'wallet.portfolio': { en: 'Portfolio', fr: 'Portfolio' },
+  'wallet.activity': { en: 'Activity', fr: 'Activité' },
+  'wallet.scanner': { en: 'Scanner', fr: 'Scanner' },
+  'wallet.openFullScanner': { en: 'Open Full Scanner', fr: 'Ouvrir le Scanner complet' },
+  'wallet.fullScannerDesc': { en: 'Deep analysis: clusters, counterparties, flows and contract exposure', fr: 'Analyse approfondie : clusters, contreparties, flux et exposition aux contrats' },
+
+  // Wallet Portfolio
+  'wallet.emptyCronos': { en: 'Empty wallet on Cronos', fr: 'Wallet vide sur Cronos' },
+  'wallet.emptyDesc': { en: 'This wallet contains no CRO, ERC20 token or NFT detected on the Cronos chain.', fr: 'Ce wallet ne contient aucun CRO, token ERC20 ou NFT détecté sur la chaîne Cronos.' },
+  'wallet.checkCronoscan': { en: 'Check on Cronoscan', fr: 'Vérifier sur Cronoscan' },
+  'wallet.estimatedValue': { en: 'Estimated value:', fr: 'Valeur estimée :' },
+  'wallet.quotaReached': { en: 'API quota reached — try again tomorrow', fr: 'Quota API atteint — réessayez demain' },
+  'wallet.quotaDesc': { en: 'The daily on-chain request quota has been exhausted.', fr: 'Le quota journalier de requêtes on-chain a été épuisé.' },
+  'wallet.loadError': { en: 'Loading error', fr: 'Erreur de chargement' },
+  'wallet.checkAddress': { en: 'Check the address and try again.', fr: 'Vérifiez l\'adresse et réessayez.' },
+
+  // Alerts Page
+  'alerts.count': { en: 'alerts · {unread} unread', fr: 'alertes · {unread} non lues' },
+  'alerts.markAllRead': { en: 'Read all', fr: 'Tout lire' },
+  'alerts.criticalPending': { en: '{count} critical alert(s) pending', fr: '{count} alerte(s) critique(s) en attente' },
+  'alerts.monitoringDesc': { en: 'Real-time monitoring of price movements, risk signals and whale activity on your tracked tokens and wallets.', fr: 'Surveillance en temps réel des mouvements de prix, signaux de risque et activité des baleines sur vos tokens et wallets suivis.' },
+  'alerts.noMatch': { en: 'No alerts match the filters', fr: 'Aucune alerte ne correspond aux filtres' },
+  'alerts.resetFilters': { en: 'Reset filters', fr: 'Réinitialiser les filtres' },
+  'alerts.filterAll': { en: 'All', fr: 'Tous' },
+  'alerts.filterSignal': { en: 'Signal', fr: 'Signal' },
+  'alerts.filterRisk': { en: 'Risk', fr: 'Risque' },
+  'alerts.filterPrice': { en: 'Price', fr: 'Prix' },
+  'alerts.filterVolume': { en: 'Volume', fr: 'Volume' },
+  'alerts.filterLiquidity': { en: 'Liquidity', fr: 'Liquidité' },
+  'alerts.priorityAll': { en: 'All', fr: 'Toutes' },
+  'alerts.priorityCritical': { en: '🔴 Critical', fr: '🔴 Critique' },
+  'alerts.priorityHigh': { en: '🟠 High', fr: '🟠 Haute' },
+  'alerts.priorityMedium': { en: '🔵 Medium', fr: '🔵 Moyenne' },
+  'alerts.priorityLow': { en: '⚪ Low', fr: '⚪ Basse' },
+  'alerts.timeNow': { en: 'Now', fr: 'Maintenant' },
+  'alerts.timeLastHour': { en: 'Last hour', fr: 'Dernière heure' },
+  'alerts.timeToday': { en: 'Today', fr: 'Aujourd\'hui' },
+  'alerts.timeOlder': { en: 'Older', fr: 'Plus ancien' },
+  'alerts.priorityLabel': { en: 'Priority', fr: 'Priorité' },
+
+  // Opportunities Page
+  'opps.desc': { en: 'Each token is scored automatically based on its potential, risk and momentum. The higher the score, the stronger the opportunity.', fr: 'Chaque token est noté automatiquement selon son potentiel, son risque et son momentum. Plus le score est élevé, plus l\'opportunité est forte.' },
+
+  // Radar Page
+  'radar.desc': { en: 'Real-time view of all detected tokens. Sort by volume, change, liquidity or risk to find the best opportunities.', fr: 'Vue en temps réel de tous les tokens détectés. Triez par volume, variation, liquidité ou risque pour trouver les meilleures opportunités.' },
+
+  // New Listings
+  'newListings.desc': { en: 'Recently listed tokens on DEXs. The newest appear first. Warning: new tokens carry high risks.', fr: 'Tokens récemment listés sur les DEX. Les plus récents apparaissent en premier. Attention, les nouveaux tokens comportent des risques élevés.' },
 } as const;
 
 type TranslationKey = keyof typeof translations;

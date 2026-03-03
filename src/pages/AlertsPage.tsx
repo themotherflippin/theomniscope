@@ -12,27 +12,27 @@ const typeIcons: Record<string, React.ElementType> = {
   signal: Zap, risk: ShieldAlert, price: TrendingUp, volume: BarChart3,
   liquidity_drain: Droplets, tax_change: ShieldAlert, smart_money: Brain,
 };
-const typeLabels: Record<string, string> = {
-  signal: 'Signal', risk: 'Risque', price: 'Prix', volume: 'Volume',
-  liquidity_drain: 'Liquidité', tax_change: 'Tax', smart_money: 'Smart Money',
+const typeLabelsStatic: Record<string, string> = {
+  signal: 'Signal', risk: 'Risk', price: 'Price', volume: 'Volume',
+  liquidity_drain: 'Liquidity', tax_change: 'Tax', smart_money: 'Smart Money',
 };
-const priorityConfig: Record<string, { color: string; bg: string; label: string }> = {
-  critical: { color: 'text-danger', bg: 'bg-danger/10 border-danger/20', label: '🔴 Critique' },
-  high: { color: 'text-warning', bg: 'bg-warning/10 border-warning/20', label: '🟠 Haute' },
-  medium: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', label: '🔵 Moyenne' },
-  low: { color: 'text-muted-foreground', bg: 'bg-secondary/50 border-border/30', label: '⚪ Basse' },
+const priorityColors: Record<string, { color: string; bg: string }> = {
+  critical: { color: 'text-danger', bg: 'bg-danger/10 border-danger/20' },
+  high: { color: 'text-warning', bg: 'bg-warning/10 border-warning/20' },
+  medium: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20' },
+  low: { color: 'text-muted-foreground', bg: 'bg-secondary/50 border-border/30' },
 };
 
 type TypeFilter = 'all' | 'price' | 'volume' | 'signal' | 'risk' | 'liquidity_drain' | 'tax_change' | 'smart_money';
 type PriorityFilter = 'all' | 'critical' | 'high' | 'medium' | 'low';
 
-function groupByTime(alerts: Alert[]): { label: string; icon: React.ElementType; alerts: Alert[] }[] {
+function groupByTime(alerts: Alert[], t: (k: any) => string): { label: string; icon: React.ElementType; alerts: Alert[] }[] {
   const now = Date.now();
   const groups: { label: string; icon: React.ElementType; alerts: Alert[] }[] = [
-    { label: 'Maintenant', icon: Zap, alerts: [] },
-    { label: 'Dernière heure', icon: Clock, alerts: [] },
-    { label: 'Aujourd\'hui', icon: Clock, alerts: [] },
-    { label: 'Plus ancien', icon: Clock, alerts: [] },
+    { label: t('alerts.timeNow'), icon: Zap, alerts: [] },
+    { label: t('alerts.timeLastHour'), icon: Clock, alerts: [] },
+    { label: t('alerts.timeToday'), icon: Clock, alerts: [] },
+    { label: t('alerts.timeOlder'), icon: Clock, alerts: [] },
   ];
   for (const a of alerts) {
     const diff = now - a.timestamp;
@@ -57,21 +57,32 @@ export default function AlertsPage() {
     return true;
   }), [alerts, typeFilter, priorityFilter]);
 
-  const grouped = useMemo(() => groupByTime(filtered), [filtered]);
+  const grouped = useMemo(() => groupByTime(filtered, t), [filtered, t]);
 
   const activeCount = (typeFilter !== 'all' ? 1 : 0) + (priorityFilter !== 'all' ? 1 : 0);
   const resetFilters = () => { setTypeFilter('all'); setPriorityFilter('all'); };
 
   const criticalCount = alerts.filter(a => a.priority === 'critical' && !a.read).length;
 
+  const typeLabels: Record<string, string> = {
+    signal: t('alerts.filterSignal'), risk: t('alerts.filterRisk'), price: t('alerts.filterPrice'),
+    volume: t('alerts.filterVolume'), liquidity_drain: t('alerts.filterLiquidity'),
+    tax_change: 'Tax', smart_money: 'Smart Money',
+  };
+
+  const priorityLabels: Record<string, string> = {
+    critical: t('alerts.priorityCritical'), high: t('alerts.priorityHigh'),
+    medium: t('alerts.priorityMedium'), low: t('alerts.priorityLow'),
+  };
+
   const typeOptions: { key: TypeFilter; label: string; icon: React.ElementType }[] = [
-    { key: 'all', label: 'Tous', icon: Bell },
-    { key: 'signal', label: 'Signal', icon: Zap },
-    { key: 'risk', label: 'Risque', icon: ShieldAlert },
-    { key: 'price', label: 'Prix', icon: TrendingUp },
-    { key: 'volume', label: 'Volume', icon: BarChart3 },
+    { key: 'all', label: t('alerts.filterAll'), icon: Bell },
+    { key: 'signal', label: t('alerts.filterSignal'), icon: Zap },
+    { key: 'risk', label: t('alerts.filterRisk'), icon: ShieldAlert },
+    { key: 'price', label: t('alerts.filterPrice'), icon: TrendingUp },
+    { key: 'volume', label: t('alerts.filterVolume'), icon: BarChart3 },
     { key: 'smart_money', label: 'Smart Money', icon: Brain },
-    { key: 'liquidity_drain', label: 'Liquidité', icon: Droplets },
+    { key: 'liquidity_drain', label: t('alerts.filterLiquidity'), icon: Droplets },
   ];
 
   return (
@@ -87,7 +98,7 @@ export default function AlertsPage() {
               <div>
                 <h1 className="text-sm font-display font-bold text-foreground tracking-tight">{t('alerts.title')}</h1>
                 <p className="text-[10px] text-muted-foreground font-mono">
-                  {alerts.length} alertes · {unreadAlerts} non lues
+                  {t('alerts.count').replace('{unread}', String(unreadAlerts)).replace('alerts', `${alerts.length} ${t('alerts.title').toLowerCase()}`)}
                 </p>
               </div>
             </div>
@@ -106,8 +117,8 @@ export default function AlertsPage() {
                 )}
               </Button>
               {unreadAlerts > 0 && (
-                <Button variant="ghost" size="sm" className="text-[10px] text-muted-foreground h-8 px-2" onClick={markAllRead}>
-                  <Check className="w-3 h-3 mr-1" /> Tout lire
+              <Button variant="ghost" size="sm" className="text-[10px] text-muted-foreground h-8 px-2" onClick={markAllRead}>
+                  <Check className="w-3 h-3 mr-1" /> {t('alerts.markAllRead')}
                 </Button>
               )}
             </div>
@@ -122,7 +133,7 @@ export default function AlertsPage() {
             >
               <AlertTriangle className="w-3.5 h-3.5 text-danger flex-shrink-0" />
               <span className="text-[11px] text-danger font-medium">
-                {criticalCount} alerte{criticalCount > 1 ? 's' : ''} critique{criticalCount > 1 ? 's' : ''} en attente
+                {t('alerts.criticalPending').replace('{count}', String(criticalCount))}
               </span>
             </motion.div>
           )}
@@ -130,7 +141,7 @@ export default function AlertsPage() {
 
         {/* Info description */}
         <p className="px-4 pb-2 text-[10px] text-muted-foreground leading-relaxed">
-          📡 Surveillance en temps réel des mouvements de prix, signaux de risque et activité des baleines sur vos tokens et wallets suivis.
+          📡 {t('alerts.monitoringDesc')}
         </p>
 
         {/* Filters */}
@@ -168,7 +179,7 @@ export default function AlertsPage() {
                 </div>
                 {/* Priority chips */}
                 <div>
-                  <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-widest">Priorité</span>
+                  <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-widest">{t('alerts.priorityLabel')}</span>
                   <div className="flex gap-1.5 mt-1.5">
                     {(['all', 'critical', 'high', 'medium', 'low'] as PriorityFilter[]).map(key => (
                       <button
@@ -180,14 +191,14 @@ export default function AlertsPage() {
                             : 'bg-secondary/40 text-muted-foreground border border-transparent hover:bg-secondary/70'
                         }`}
                       >
-                        {key === 'all' ? 'Toutes' : priorityConfig[key]?.label}
+                        {key === 'all' ? t('alerts.priorityAll') : priorityLabels[key] || key}
                       </button>
                     ))}
                   </div>
                 </div>
                 {activeCount > 0 && (
                   <button onClick={resetFilters} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-                    <X className="w-3 h-3" /> Réinitialiser les filtres
+                    <X className="w-3 h-3" /> {t('alerts.resetFilters')}
                   </button>
                 )}
               </div>
@@ -200,7 +211,7 @@ export default function AlertsPage() {
       <div className="px-4 pt-3">
         <div className="rounded-xl bg-primary/5 border border-primary/10 px-3 py-2.5">
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            📡 Les alertes surveillent en temps réel les mouvements de prix, les signaux de risque et l'activité des baleines sur vos tokens et wallets suivis.
+            📡 {t('alerts.monitoringDesc')}
           </p>
         </div>
       </div>
@@ -213,7 +224,7 @@ export default function AlertsPage() {
               <Bell className="w-5 h-5 text-muted-foreground/40" />
             </div>
             <p className="text-sm text-muted-foreground">
-              {activeCount > 0 ? 'Aucune alerte ne correspond aux filtres' : t('alerts.none')}
+              {activeCount > 0 ? t('alerts.noMatch') : t('alerts.none')}
             </p>
           </div>
         ) : (
@@ -241,8 +252,8 @@ export default function AlertsPage() {
 
 function AlertItem({ alert, index, onRead }: { alert: Alert; index: number; onRead: (id: string) => void }) {
   const Icon = typeIcons[alert.type] || Bell;
-  const pConfig = priorityConfig[alert.priority] || priorityConfig.low;
-  const typeLabel = typeLabels[alert.type] || alert.type;
+  const pConfig = priorityColors[alert.priority] || priorityColors.low;
+  const typeLabel = typeLabelsStatic[alert.type] || alert.type;
 
   return (
     <motion.div
