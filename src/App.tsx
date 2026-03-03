@@ -28,6 +28,7 @@ import CasesListPage from "@/pages/CasesListPage";
 import CaseDetailPage from "@/pages/CaseDetailPage";
 import SharedCasePage from "@/pages/SharedCasePage";
 import WalletDetail from "@/pages/WalletDetail";
+import WalletActivity from "@/pages/WalletActivity";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ function AppRoutes({ prefs, updatePrefs }: { prefs: ReturnType<typeof useUserPre
                   <Route path="/opportunities" element={<Opportunities prefs={prefs} />} />
                   <Route path="/watchlists" element={<WatchlistsPage />} />
                   <Route path="/wallet/:address" element={<WalletDetail />} />
+                  <Route path="/activity" element={<WalletActivity />} />
                   <Route path="/alerts" element={<AlertsPage />} />
                   <Route path="/server-alerts" element={<ServerAlertsPage />} />
                   <Route path="/alert-rules" element={<AlertRulesPage />} />
