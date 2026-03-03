@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Chain, DEX } from '@/lib/types';
+import { CombinedApiDataSchema } from '@/lib/validation';
 
 export const TRACKED_TOKENS: { symbol: string; name: string; chain: Chain; dex: DEX }[] = [
   { symbol: 'PEPE', name: 'Pepe', chain: 'ethereum', dex: 'uniswap_v3' },
@@ -116,7 +117,16 @@ async function fetchAllPrices(): Promise<CombinedApiData> {
     throw new Error(`Failed to fetch prices: ${res.status}`);
   }
 
-  return await res.json();
+  const raw = await res.json();
+
+  // Validate payload with Zod schema
+  const parsed = CombinedApiDataSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.warn('[Validation:CombinedApiData]', parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; '));
+    // Return raw data as fallback but log the warning
+    return raw as CombinedApiData;
+  }
+  return parsed.data as CombinedApiData;
 }
 
 export function useCMCPrices() {

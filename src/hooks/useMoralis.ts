@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { validateOrNull } from "@/lib/validation";
+import { MoralisTokenPriceSchema, MoralisTransactionSchema, MoralisErc20TransferSchema } from "@/lib/validation";
 
 interface MoralisOptions {
   endpoint: string;
