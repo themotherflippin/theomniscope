@@ -167,6 +167,87 @@ serve(async (req) => {
     health.storage = { status: "error" };
   }
 
+  // 7. Accounting / Revenue stats
+  try {
+    const [
+      freeUsersRes,
+      paidUsersRes,
+      nftUsersRes,
+      croPaymentsRes,
+      stripePaymentsRes,
+      recentCroRes,
+      recentStripeRes,
+    ] = await Promise.all([
+      // Free users (access_type = 'none' or 'free' or no subscription)
+      db.from("user_access").select("id", { count: "exact", head: true }).eq("access_type", "none"),
+      // Paid users (subscription or cro_payment)
+      db.from("user_access").select("id", { count: "exact", head: true }).in("access_type", ["subscription", "cro_payment", "stripe"]),
+      // NFT holders
+      db.from("user_access").select("id", { count: "exact", head: true }).eq("nft_verified", true),
+      // CRO payment events
+      db.from("access_events").select("id, created_at, metadata", { count: "exact" }).eq("event_type", "cro_payment"),
+      // Stripe payment events
+      db.from("access_events").select("id, created_at, metadata", { count: "exact" }).eq("event_type", "stripe_checkout"),
+      // Recent CRO payments (last 30 days)
+      db.from("access_events")
+        .select("created_at, metadata")
+        .eq("event_type", "cro_payment")
+        .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString())
+        .order("created_at", { ascending: true }),
+      // Recent Stripe payments (last 30 days)
+      db.from("access_events")
+        .select("created_at, metadata")
+        .eq("event_type", "stripe_checkout")
+        .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString())
+        .order("created_at", { ascending: true }),
+    ]);
+
+    // Build daily revenue for last 7 days
+    const dailyRevenue: Record<string, { cro: number; stripe: number; count: number }> = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      const key = d.toISOString().slice(0, 10);
+      dailyRevenue[key] = { cro: 0, stripe: 0, count: 0 };
+    }
+
+    for (const evt of recentCroRes.data ?? []) {
+      const day = evt.created_at.slice(0, 10);
+      if (dailyRevenue[day]) {
+        dailyRevenue[day].cro += 399;
+        dailyRevenue[day].count++;
+      }
+    }
+    for (const evt of recentStripeRes.data ?? []) {
+      const day = evt.created_at.slice(0, 10);
+      if (dailyRevenue[day]) {
+        dailyRevenue[day].stripe += 29.99;
+        dailyRevenue[day].count++;
+      }
+    }
+
+    const totalCroRevenue = (croPaymentsRes.count ?? 0) * 399;
+    const totalStripeRevenue = (stripePaymentsRes.count ?? 0) * 29.99;
+
+    health.accounting = {
+      freeUsers: freeUsersRes.count ?? 0,
+      paidUsers: paidUsersRes.count ?? 0,
+      nftUsers: nftUsersRes.count ?? 0,
+      totalSales: (croPaymentsRes.count ?? 0) + (stripePaymentsRes.count ?? 0),
+      croSales: croPaymentsRes.count ?? 0,
+      stripeSales: stripePaymentsRes.count ?? 0,
+      totalRevenueCRO: totalCroRevenue,
+      totalRevenueUSD: totalStripeRevenue,
+      dailyRevenue: Object.entries(dailyRevenue).map(([date, v]) => ({
+        date,
+        cro: v.cro,
+        usd: v.stripe,
+        sales: v.count,
+      })),
+    };
+  } catch (err) {
+    health.accounting = { error: err instanceof Error ? err.message : String(err) };
+  }
+
   return new Response(JSON.stringify(health), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
