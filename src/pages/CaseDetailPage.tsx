@@ -15,6 +15,9 @@ import {
   CheckCircle,
   Copy,
   AlertTriangle,
+  ShieldAlert,
+  Search,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +43,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
 import { MetricTooltip } from "@/components/DataProvenance";
 import { CaseVisualTimeline } from "@/components/case/CaseVisualTimeline";
+import RiskAnalysisPanel from "@/components/case/RiskAnalysisPanel";
+import TransactionExplorer from "@/components/case/TransactionExplorer";
+import WalletRelationships from "@/components/case/WalletRelationships";
 import {
   useCase,
   useUpdateCase,
@@ -269,7 +275,6 @@ function ReportsTab({ caseId }: { caseId: string }) {
   const { data: jobs, isLoading } = useReportJobs(caseId);
   const generate = useGenerateReport();
   const enableShare = useEnableShare();
-  const disableShare = useDisableShare();
   const { toast } = useToast();
   const [shareLink, setShareLink] = useState<string | null>(null);
 
@@ -298,24 +303,12 @@ function ReportsTab({ caseId }: { caseId: string }) {
 
   return (
     <div className="space-y-4">
-      {/* Actions */}
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          onClick={handleGenerate}
-          disabled={generate.isPending}
-          className="gap-1.5 text-xs"
-        >
+        <Button size="sm" onClick={handleGenerate} disabled={generate.isPending} className="gap-1.5 text-xs">
           {generate.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
           {t('case.generateReport')}
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleShare}
-          disabled={enableShare.isPending}
-          className="gap-1.5 text-xs"
-        >
+        <Button size="sm" variant="outline" onClick={handleShare} disabled={enableShare.isPending} className="gap-1.5 text-xs">
           <Share2 className="w-3.5 h-3.5" /> {t('case.shareLink')}
         </Button>
       </div>
@@ -324,21 +317,12 @@ function ReportsTab({ caseId }: { caseId: string }) {
         <div className="gradient-card rounded-lg p-3 flex items-center gap-2">
           <CheckCircle className="w-4 h-4 text-success shrink-0" />
           <p className="text-xs font-mono truncate flex-1">{shareLink}</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={() => {
-              navigator.clipboard.writeText(shareLink);
-              toast({ title: "Copied!" });
-            }}
-          >
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(shareLink); toast({ title: "Copied!" }); }}>
             <Copy className="w-3 h-3" />
           </Button>
         </div>
       )}
 
-      {/* Jobs list */}
       {(jobs ?? []).length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-6">{t('case.noReports')}</p>
       ) : (
@@ -346,44 +330,60 @@ function ReportsTab({ caseId }: { caseId: string }) {
           {(jobs ?? []).map((job) => (
             <div key={job.id} className="gradient-card rounded-lg p-3">
               <div className="flex items-center justify-between mb-1.5">
-                <Badge
-                  variant="outline"
-                  className={`text-[9px] ${
-                    job.status === "done" ? "bg-success/15 text-success border-success/30" :
-                    job.status === "failed" ? "bg-danger/15 text-danger border-danger/30" :
-                    "bg-warning/15 text-warning border-warning/30"
-                  }`}
-                >
+                <Badge variant="outline" className={`text-[9px] ${job.status === "done" ? "bg-success/15 text-success border-success/30" : job.status === "failed" ? "bg-danger/15 text-danger border-danger/30" : "bg-warning/15 text-warning border-warning/30"}`}>
                   {job.status.toUpperCase()}
                 </Badge>
-                <span className="text-[10px] text-muted-foreground">
-                  {new Date(job.created_at).toLocaleString()}
-                </span>
+                <span className="text-[10px] text-muted-foreground">{new Date(job.created_at).toLocaleString()}</span>
               </div>
               {job.status === "done" && (
                 <div className="flex gap-2 mt-2">
-                  {job.output_url && (
-                    <a href={job.output_url} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="outline" className="gap-1 text-xs h-7">
-                        <Download className="w-3 h-3" /> Report
-                      </Button>
-                    </a>
-                  )}
-                  {job.output_json_url && (
-                    <a href={job.output_json_url} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="outline" className="gap-1 text-xs h-7">
-                        <Download className="w-3 h-3" /> JSON
-                      </Button>
-                    </a>
-                  )}
+                  {job.output_url && <a href={job.output_url} target="_blank" rel="noopener noreferrer"><Button size="sm" variant="outline" className="gap-1 text-xs h-7"><Download className="w-3 h-3" /> Report</Button></a>}
+                  {job.output_json_url && <a href={job.output_json_url} target="_blank" rel="noopener noreferrer"><Button size="sm" variant="outline" className="gap-1 text-xs h-7"><Download className="w-3 h-3" /> JSON</Button></a>}
                 </div>
               )}
-              {job.status === "failed" && job.error_message && (
-                <p className="text-xs text-danger mt-1">{job.error_message}</p>
-              )}
+              {job.status === "failed" && job.error_message && <p className="text-xs text-danger mt-1">{job.error_message}</p>}
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+// ---------- Investigation Tab ----------
+
+function InvestigationTab({ caseId }: { caseId: string }) {
+  const { lang } = useI18n();
+  const { data: items } = useCaseItems(caseId);
+  const [subTab, setSubTab] = useState<"transactions" | "relationships">("transactions");
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-1.5">
+        <Button
+          size="sm"
+          variant={subTab === "transactions" ? "default" : "outline"}
+          onClick={() => setSubTab("transactions")}
+          className="text-[10px] h-7 gap-1"
+        >
+          <Search className="w-3 h-3" />
+          {lang === "fr" ? "Transactions" : "Transactions"}
+        </Button>
+        <Button
+          size="sm"
+          variant={subTab === "relationships" ? "default" : "outline"}
+          onClick={() => setSubTab("relationships")}
+          className="text-[10px] h-7 gap-1"
+        >
+          <Users className="w-3 h-3" />
+          {lang === "fr" ? "Relations" : "Relationships"}
+        </Button>
+      </div>
+
+      {subTab === "transactions" ? (
+        <TransactionExplorer items={items ?? []} />
+      ) : (
+        <WalletRelationships items={items ?? []} />
       )}
     </div>
   );
@@ -394,8 +394,10 @@ function ReportsTab({ caseId }: { caseId: string }) {
 export default function CaseDetailPage() {
   const { id: caseId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { data: caseData, isLoading } = useCase(caseId ?? "");
+  const { data: items } = useCaseItems(caseId ?? "");
+  const { data: notes } = useCaseNotes(caseId ?? "");
   const updateCase = useUpdateCase();
 
   if (!caseId) return null;
@@ -434,13 +436,8 @@ export default function CaseDetailPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <MetricTooltip labelKey="caseStatus">
-            <Select
-              value={caseData.status}
-              onValueChange={(v) => updateCase.mutate({ case_id: caseId, status: v as CaseStatus })}
-            >
-              <SelectTrigger className="w-24 h-7 text-[10px]">
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={caseData.status} onValueChange={(v) => updateCase.mutate({ case_id: caseId, status: v as CaseStatus })}>
+              <SelectTrigger className="w-24 h-7 text-[10px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="open">{t('case.open')}</SelectItem>
                 <SelectItem value="triaged">{t('case.triaged')}</SelectItem>
@@ -449,13 +446,8 @@ export default function CaseDetailPage() {
             </Select>
           </MetricTooltip>
           <MetricTooltip labelKey="casePriority">
-            <Select
-              value={caseData.priority}
-              onValueChange={(v) => updateCase.mutate({ case_id: caseId, priority: v as CasePriority })}
-            >
-              <SelectTrigger className="w-24 h-7 text-[10px]">
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={caseData.priority} onValueChange={(v) => updateCase.mutate({ case_id: caseId, priority: v as CasePriority })}>
+              <SelectTrigger className="w-24 h-7 text-[10px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="low">{t('case.low')}</SelectItem>
                 <SelectItem value="medium">{t('case.medium')}</SelectItem>
@@ -471,26 +463,37 @@ export default function CaseDetailPage() {
         )}
       </header>
 
+      {/* Risk Analysis Panel */}
+      <div className="px-4 pt-4">
+        <RiskAnalysisPanel items={items ?? []} notes={(notes ?? []).map(n => ({ body: n.body }))} />
+      </div>
+
       {/* Tabs */}
       <div className="px-4 pt-4">
         <Tabs defaultValue="evidence" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-4 h-9">
-            <TabsTrigger value="evidence" className="text-xs gap-1">
-              <FileText className="w-3.5 h-3.5" /> {t('case.evidence')}
+          <TabsList className="w-full grid grid-cols-5 h-9">
+            <TabsTrigger value="evidence" className="text-[10px] gap-1">
+              <FileText className="w-3 h-3" /> {t('case.evidence')}
             </TabsTrigger>
-            <TabsTrigger value="timeline" className="text-xs gap-1">
-              <Clock className="w-3.5 h-3.5" /> {t('case.timeline')}
+            <TabsTrigger value="investigate" className="text-[10px] gap-1">
+              <Search className="w-3 h-3" /> {lang === "fr" ? "Enquête" : "Investigate"}
             </TabsTrigger>
-            <TabsTrigger value="notes" className="text-xs gap-1">
-              <MessageSquare className="w-3.5 h-3.5" /> {t('case.notes')}
+            <TabsTrigger value="timeline" className="text-[10px] gap-1">
+              <Clock className="w-3 h-3" /> {t('case.timeline')}
             </TabsTrigger>
-            <TabsTrigger value="reports" className="text-xs gap-1">
-              <Download className="w-3.5 h-3.5" /> {t('case.reports')}
+            <TabsTrigger value="notes" className="text-[10px] gap-1">
+              <MessageSquare className="w-3 h-3" /> {t('case.notes')}
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="text-[10px] gap-1">
+              <Download className="w-3 h-3" /> {t('case.reports')}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="evidence">
             <EvidenceTab caseId={caseId} />
+          </TabsContent>
+          <TabsContent value="investigate">
+            <InvestigationTab caseId={caseId} />
           </TabsContent>
           <TabsContent value="timeline">
             <TimelineTab caseId={caseId} />

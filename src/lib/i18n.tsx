@@ -224,6 +224,50 @@ const translations = {
   'case.medium': { en: 'Medium', fr: 'Moyenne' },
   'case.high': { en: 'High', fr: 'Haute' },
   'case.critical': { en: 'Critical', fr: 'Critique' },
+
+  // Risk Engine
+  'risk.analysis': { en: 'Risk Analysis', fr: 'Analyse de Risque' },
+  'risk.score': { en: 'Risk Score', fr: 'Score de Risque' },
+  'risk.lowRisk': { en: 'Low Risk', fr: 'Risque faible' },
+  'risk.mediumRisk': { en: 'Medium Risk', fr: 'Risque moyen' },
+  'risk.highRisk': { en: 'High Risk', fr: 'Risque élevé' },
+  'risk.lowConfidence': { en: 'Low Confidence', fr: 'Confiance faible' },
+  'risk.mediumConfidence': { en: 'Medium Confidence', fr: 'Confiance moyenne' },
+  'risk.highConfidence': { en: 'High Confidence', fr: 'Confiance élevée' },
+  'risk.triggeredFactors': { en: 'Triggered Factors', fr: 'Facteurs déclenchés' },
+  'risk.noFactors': { en: 'No risk factors detected in current evidence.', fr: 'Aucun facteur de risque détecté dans les preuves actuelles.' },
+  'risk.insufficientData': { en: 'Insufficient data — add evidence to generate a risk analysis.', fr: 'Données insuffisantes — ajoutez des preuves pour obtenir une analyse de risque.' },
+  'risk.methodology': { en: 'Score computed from detectable on-chain signals in case evidence. This is not a definitive conclusion.', fr: 'Score calculé à partir de signaux on-chain détectables dans les preuves du dossier. Ce n\'est pas une conclusion définitive.' },
+
+  // Investigation Mode
+  'investigate.title': { en: 'Investigate', fr: 'Enquête' },
+  'investigate.transactions': { en: 'Transactions', fr: 'Transactions' },
+  'investigate.relationships': { en: 'Relationships', fr: 'Relations' },
+  'investigate.noTx': { en: 'No matching transactions in this case.', fr: 'Aucune transaction correspondante dans ce dossier.' },
+  'investigate.noRelationships': { en: 'No wallet relationships detected in evidence. Add wallets and transactions.', fr: 'Aucune relation de wallet détectée dans les preuves. Ajoutez des wallets et transactions.' },
+  'investigate.repeatedCounterparties': { en: 'Repeated Counterparties', fr: 'Contreparties répétées' },
+  'investigate.limitedConfidence': { en: 'Limited confidence — based only on case evidence, not a full scan.', fr: 'Confiance limitée — basée uniquement sur les preuves du dossier, pas sur un scan complet.' },
+  'investigate.bookmarkEvidence': { en: 'Bookmark as evidence', fr: 'Marquer comme preuve' },
+  'investigate.filterAll': { en: 'All', fr: 'Tous' },
+  'investigate.filterIn': { en: 'In', fr: 'Entrant' },
+  'investigate.filterOut': { en: 'Out', fr: 'Sortant' },
+  'investigate.sortDate': { en: 'Date', fr: 'Date' },
+  'investigate.sortAmount': { en: 'Amount', fr: 'Montant' },
+
+  // Report / PDF
+  'report.executiveSummary': { en: 'Executive Summary', fr: 'Résumé exécutif' },
+  'report.riskAssessment': { en: 'Risk Assessment', fr: 'Évaluation des risques' },
+  'report.evidenceTable': { en: 'Evidence Table', fr: 'Tableau des preuves' },
+  'report.dataProvenance': { en: 'Data Provenance', fr: 'Provenance des données' },
+  'report.methodology': { en: 'Methodology & Data Sources', fr: 'Méthodologie et sources de données' },
+  'report.disclaimer': { en: 'This report contains on-chain intelligence signals and probabilistic risk indicators. This is not financial or legal advice.', fr: 'Ce rapport contient des signaux d\'intelligence on-chain et des indicateurs de risque probabilistes. Ce n\'est ni un conseil financier ni un conseil juridique.' },
+
+  // Error states
+  'error.generic': { en: 'An error occurred', fr: 'Une erreur est survenue' },
+  'error.networkFailed': { en: 'Network request failed', fr: 'Requête réseau échouée' },
+  'error.apiDown': { en: 'Service temporarily unavailable', fr: 'Service temporairement indisponible' },
+  'error.rateLimit': { en: 'Rate limit reached — please wait', fr: 'Limite de requêtes atteinte — veuillez patienter' },
+  'error.notIndexed': { en: 'This address is not yet indexed', fr: 'Cette adresse n\'est pas encore indexée' },
 } as const;
 
 type TranslationKey = keyof typeof translations;
