@@ -269,19 +269,26 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
                 </p>
                 <span className="text-[9px] font-mono text-muted-foreground">{prefs.chains.length}/7</span>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-wrap">
                 {chainOptions.map(c => (
-                  <OptionChip
+                  <motion.button
                     key={c.id}
-                    active={prefs.chains.includes(c.id)}
-                    label={c.label}
+                    whileTap={{ scale: 0.9 }}
+                    transition={spring}
                     onClick={() => {
                       const next = prefs.chains.includes(c.id)
                         ? prefs.chains.filter(x => x !== c.id)
                         : [...prefs.chains, c.id];
                       onUpdatePrefs({ chains: next });
                     }}
-                  />
+                    className={`px-2 py-1 rounded-md border text-[10px] font-bold transition-all duration-200 ${
+                      prefs.chains.includes(c.id)
+                        ? 'border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/25'
+                        : 'border-border/50 bg-muted/30 text-muted-foreground hover:border-border'
+                    }`}
+                  >
+                    {c.label}
+                  </motion.button>
                 ))}
               </div>
             </div>

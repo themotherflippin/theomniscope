@@ -7,7 +7,7 @@ import {
   Plus, Copy, Check, Trash2,
   Activity, Shield,
   Loader2, RefreshCw, Zap, Database, Server,
-  CreditCard, BarChart3, ChevronLeft, ChevronRight, Clock,
+  CreditCard, BarChart3, ChevronLeft, Clock,
 } from "lucide-react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
@@ -143,10 +143,10 @@ export default function Admin() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
   const [selectedDuration, setSelectedDuration] = useState<CodeDuration>("lifetime");
-  const [codePage, setCodePage] = useState(0);
+  const [codePage, setCodePage] = useState(0); // kept for compat
   const [adminChecked, setAdminChecked] = useState(false);
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const fetchHealth = useCallback(async () => {
     setHealthLoading(true);
@@ -366,7 +366,7 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Row 3: Invitation Codes — compact grid */}
+        {/* Row 3: Invitation Codes — horizontal carousel */}
         <div
           className="rounded-xl border border-border/30 p-2.5 shrink-0"
           style={{ background: "hsl(var(--widget-alerts) / 0.4)" }}
@@ -376,79 +376,126 @@ export default function Admin() {
               <Shield className="w-3 h-3 text-[hsl(var(--warning))]" />
               <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">{t("admin.accessCodes")}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] text-muted-foreground font-mono">{codes.length} total</span>
-              {totalPages > 1 && (
-                <div className="flex items-center gap-0.5 ml-1">
-                  <button
-                    onClick={() => setCodePage(p => Math.max(0, p - 1))}
-                    disabled={codePage === 0}
-                    className="p-0.5 rounded hover:bg-accent/50 disabled:opacity-30 transition-colors"
-                  >
-                    <ChevronLeft className="w-3 h-3" />
-                  </button>
-                  <span className="text-[8px] font-mono text-muted-foreground">{codePage + 1}/{totalPages}</span>
-                  <button
-                    onClick={() => setCodePage(p => Math.min(totalPages - 1, p + 1))}
-                    disabled={codePage >= totalPages - 1}
-                    className="p-0.5 rounded hover:bg-accent/50 disabled:opacity-30 transition-colors"
-                  >
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
-            </div>
+            <span className="text-[9px] text-muted-foreground font-mono">{codes.length} total</span>
           </div>
 
           {codes.length === 0 ? (
             <p className="text-center text-[11px] text-muted-foreground py-4">{t("admin.noCodes")}</p>
           ) : (
-            <div className="grid grid-cols-2 gap-1.5">
-              <AnimatePresence initial={false} mode="popLayout">
-                {pagedCodes.map((c) => {
-                  const status = getCodeStatus(c);
-                  const statusColor = status === "used"
-                    ? "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))] border-[hsl(var(--success)/0.2)]"
-                    : status === "expired"
-                    ? "bg-[hsl(var(--danger)/0.1)] text-[hsl(var(--danger))] border-[hsl(var(--danger)/0.2)]"
-                    : "bg-muted text-muted-foreground border-border/30";
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1 snap-x snap-mandatory">
+              {codes.map((c) => {
+                const status = getCodeStatus(c);
+                const statusColor = status === "used"
+                  ? "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))] border-[hsl(var(--success)/0.2)]"
+                  : status === "expired"
+                  ? "bg-[hsl(var(--danger)/0.1)] text-[hsl(var(--danger))] border-[hsl(var(--danger)/0.2)]"
+                  : "bg-muted text-muted-foreground border-border/30";
 
-                  return (
-                    <motion.div
-                      key={c.id}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={spring}
-                      className="flex flex-col gap-1 px-2 py-1.5 rounded-lg border border-border/20 bg-card/60 backdrop-blur-sm"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-[11px] font-bold tracking-widest">{c.code}</span>
-                        <div className="flex items-center gap-0.5">
-                          <button className="p-0.5 rounded hover:bg-accent/50 transition-colors" onClick={() => copyCode(c.code, c.id)}>
-                            {copiedId === c.id
-                              ? <Check className="w-2.5 h-2.5 text-[hsl(var(--success))]" />
-                              : <Copy className="w-2.5 h-2.5 text-muted-foreground" />}
-                          </button>
-                          <button className="p-0.5 rounded hover:bg-destructive/10 transition-colors" onClick={() => deleteCode(c.id)}>
-                            <Trash2 className="w-2.5 h-2.5 text-destructive/70" />
-                          </button>
-                        </div>
+                return (
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={spring}
+                    className="flex flex-col gap-1 px-2.5 py-2 rounded-lg border border-border/20 bg-card/60 backdrop-blur-sm min-w-[140px] shrink-0 snap-start"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[11px] font-bold tracking-widest">{c.code}</span>
+                      <div className="flex items-center gap-0.5">
+                        <button className="p-0.5 rounded hover:bg-accent/50 transition-colors" onClick={() => copyCode(c.code, c.id)}>
+                          {copiedId === c.id
+                            ? <Check className="w-2.5 h-2.5 text-[hsl(var(--success))]" />
+                            : <Copy className="w-2.5 h-2.5 text-muted-foreground" />}
+                        </button>
+                        <button className="p-0.5 rounded hover:bg-destructive/10 transition-colors" onClick={() => deleteCode(c.id)}>
+                          <Trash2 className="w-2.5 h-2.5 text-destructive/70" />
+                        </button>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Badge className={`text-[7px] px-1 py-0 h-3.5 ${statusColor}`}>
-                          {status === "used" ? t("admin.used") : status === "expired" ? t("admin.expired") : t("admin.available")}
-                        </Badge>
-                        <span className="text-[7px] text-muted-foreground font-mono">
-                          {getDurationLabel((c as any).duration ?? "lifetime", t)}
-                        </span>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Badge className={`text-[7px] px-1 py-0 h-3.5 ${statusColor}`}>
+                        {status === "used" ? t("admin.used") : status === "expired" ? t("admin.expired") : t("admin.available")}
+                      </Badge>
+                      <span className="text-[7px] text-muted-foreground font-mono">
+                        {getDurationLabel((c as any).duration ?? "lifetime", t)}
+                      </span>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
+        </div>
+
+        {/* Row 4: Usage Analytics */}
+        <div
+          className="rounded-xl border border-border/30 p-2.5 shrink-0"
+          style={{ background: "hsl(var(--chart-blue) / 0.06)" }}
+        >
+          <div className="flex items-center gap-1.5 mb-2">
+            <BarChart3 className="w-3 h-3 text-[hsl(var(--chart-blue))]" />
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">User Activity</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg border border-border/20 bg-card/40 p-2 text-center">
+              <p className="text-lg font-bold font-mono">{usedCodes}</p>
+              <p className="text-[8px] text-muted-foreground uppercase">Active Users</p>
+            </div>
+            <div className="rounded-lg border border-border/20 bg-card/40 p-2 text-center">
+              <p className="text-lg font-bold font-mono">{String(walletScans)}</p>
+              <p className="text-[8px] text-muted-foreground uppercase">Total Scans</p>
+            </div>
+            <div className="rounded-lg border border-border/20 bg-card/40 p-2 text-center">
+              <p className="text-lg font-bold font-mono">{String(totalAlerts)}</p>
+              <p className="text-[8px] text-muted-foreground uppercase">Alerts Created</p>
+            </div>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-border/20 bg-card/40 p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <CreditCard className="w-3 h-3 text-[hsl(var(--warning))]" />
+                <span className="text-[8px] text-muted-foreground uppercase font-medium">Codes by Type</span>
+              </div>
+              <div className="space-y-0.5">
+                {['lifetime', '1year', '3months', '1month', '1week'].map(d => {
+                  const count = codes.filter(c => (c.duration ?? 'lifetime') === d).length;
+                  if (count === 0) return null;
+                  return (
+                    <div key={d} className="flex items-center justify-between">
+                      <span className="text-[9px] text-muted-foreground">{getDurationLabel(d, t)}</span>
+                      <span className="text-[10px] font-mono font-bold">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="rounded-lg border border-border/20 bg-card/40 p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <Activity className="w-3 h-3 text-[hsl(var(--success))]" />
+                <span className="text-[8px] text-muted-foreground uppercase font-medium">Adoption Rate</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-muted-foreground">Used</span>
+                  <span className="text-[10px] font-mono font-bold text-[hsl(var(--success))]">
+                    {codes.length > 0 ? Math.round((usedCodes / codes.length) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[hsl(var(--success))]"
+                    style={{ width: `${codes.length > 0 ? (usedCodes / codes.length) * 100 : 0}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-muted-foreground">Expired</span>
+                  <span className="text-[10px] font-mono font-bold text-[hsl(var(--danger))]">
+                    {codes.filter(c => getCodeStatus(c) === 'expired').length}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
