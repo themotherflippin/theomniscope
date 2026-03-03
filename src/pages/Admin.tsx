@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Mail, Lock, Plus, Copy, Check, Trash2,
+  Plus, Copy, Check, Trash2,
   Activity, Shield,
   Loader2, RefreshCw, Zap, Database, Server,
   CreditCard, BarChart3, ChevronLeft, ChevronRight, Clock,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
 import {
   Select,
   SelectContent,
@@ -135,10 +135,7 @@ function getDurationLabel(duration: string, t: (key: any) => string): string {
 const CODES_PER_PAGE = 8;
 
 export default function Admin() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
-  const [loginError, setLoginError] = useState("");
+  const { isAdmin, loading: adminLoading } = useAdminStatus();
   const [codes, setCodes] = useState<any[]>([]);
   const [genLoading, setGenLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -147,28 +144,9 @@ export default function Admin() {
   const [healthLoading, setHealthLoading] = useState(true);
   const [selectedDuration, setSelectedDuration] = useState<CodeDuration>("lifetime");
   const [codePage, setCodePage] = useState(0);
+  const [adminChecked, setAdminChecked] = useState(false);
   const navigate = useNavigate();
   const { t } = useI18n();
-
-  const verifyCredentials = async () => {
-    setLoginError("");
-    const { data, error } = await supabase.functions.invoke("verify-admin-pin", {
-      body: { email: email.trim(), password: password.trim() },
-    });
-    if (error || !data?.valid) {
-      setLoginError(t("admin.loginError"));
-      return;
-    }
-    setAuthenticated(true);
-    localStorage.setItem("oracle_admin_session", Date.now().toString());
-  };
-
-  useEffect(() => {
-    const session = localStorage.getItem("oracle_admin_session");
-    if (session && Date.now() - parseInt(session) < 3600000) {
-      setAuthenticated(true);
-    }
-  }, []);
 
   const fetchHealth = useCallback(async () => {
     setHealthLoading(true);
@@ -188,11 +166,26 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    if (authenticated) {
+    if (isAdmin && !adminChecked) {
+      setAdminChecked(true);
       fetchCodes();
       fetchHealth();
     }
-  }, [authenticated, fetchCodes, fetchHealth]);
+  }, [isAdmin, adminChecked, fetchCodes, fetchHealth]);
+
+  // Loading state while checking admin
+  if (adminLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Non-admin users get redirected
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   const createCode = async () => {
     setGenLoading(true);
@@ -227,36 +220,6 @@ export default function Admin() {
     fetchHealth();
   };
 
-  // --- Login ---
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-        <motion.div
-          initial={{ scale: 0.92, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={spring}
-          className="w-full max-w-xs space-y-5 text-center"
-        >
-          <Shield className="w-12 h-12 mx-auto text-primary" />
-          <h1 className="text-lg font-display font-bold">{t("admin.title")}</h1>
-          <div className="space-y-2.5">
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input type="email" placeholder={t("admin.emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" className="pl-10 h-10 text-sm" />
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input type="password" placeholder={t("admin.passwordPlaceholder")} value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && verifyCredentials()} autoComplete="off" className="pl-10 h-10 text-sm" />
-            </div>
-            {loginError && <p className="text-xs text-destructive">{loginError}</p>}
-            <Button className="w-full h-10" onClick={verifyCredentials} disabled={!email || !password}>
-              {t("admin.access")}
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   // --- Derived values ---
   const dbStatus = (health?.database?.status ?? "loading") as ServiceStatus;
