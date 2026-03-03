@@ -68,13 +68,14 @@ function OptionChip({ active, label, icon: Icon, onClick }: {
 }) {
   return (
     <motion.button
-      whileTap={{ scale: 0.95 }}
+      whileTap={{ scale: 0.9 }}
+      animate={{ scale: active ? 1.02 : 1 }}
       transition={spring}
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold transition-all ${
+      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-[11px] font-bold transition-all duration-200 ${
         active
-          ? 'border-primary/40 bg-primary/10 text-primary'
-          : 'border-border/40 text-muted-foreground hover:border-border'
+          ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25'
+          : 'border-border/50 bg-muted/30 text-muted-foreground hover:border-border active:bg-muted/60'
       }`}
     >
       {Icon && <Icon className="w-3.5 h-3.5" />}
@@ -157,7 +158,7 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
             icon={premium.isPremium ? Crown : CreditCard}
             color="var(--warning)"
             title={lang === 'fr' ? 'Abonnement' : 'Plan'}
-            onClick={() => !premium.isPremium && setShowUpgrade(true)}
+            onClick={() => setShowUpgrade(true)}
             trailing={
               premium.isPremium ? (
                 <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[hsl(42_95%_50%/0.15)] text-[hsl(42,95%,50%)] border border-[hsl(42_95%_50%/0.2)]">
