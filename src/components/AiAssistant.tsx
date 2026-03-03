@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, X, Send, Sparkles, Loader2, Trash2 } from "lucide-react";
+import { Bot, X, Send, Sparkles, Loader2, Trash2, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAiAssistant } from "@/hooks/useAiAssistant";
 import { useLocation } from "react-router-dom";
@@ -89,6 +89,67 @@ export function AiAssistant() {
   useEffect(() => {
     if (isOpen) inputRef.current?.focus();
   }, [isOpen]);
+
+  // Voice recording
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        // Convert to base64 and send to transcription
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64 = (reader.result as string).split(",")[1];
+          try {
+            const resp = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-analyze`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                },
+                body: JSON.stringify({ action: "transcribe", audio: base64 }),
+              }
+            );
+            if (resp.ok) {
+              const data = await resp.json();
+              const transcript = data.text || data.transcript || "";
+              if (transcript.trim()) {
+                setInput(transcript);
+              }
+            }
+          } catch (err) {
+            console.error("Transcription error:", err);
+          }
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Microphone access denied:", err);
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
 
   const handleSend = (text?: string) => {
     const msg = (text ?? input).trim();
@@ -193,12 +254,21 @@ export function AiAssistant() {
 
             {/* Input */}
             <div className="flex items-center gap-2 px-3 py-2.5 border-t border-white/[0.06] bg-muted/20">
+              <Button
+                size="icon"
+                variant={isRecording ? "default" : "ghost"}
+                className={`h-7 w-7 shrink-0 ${isRecording ? "bg-danger text-white animate-pulse" : ""}`}
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={isLoading}
+              >
+                {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+              </Button>
               <input
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Ask Oracle AI..."
+                placeholder={isRecording ? "Listening..." : "Ask Oracle AI..."}
                 className="flex-1 text-xs bg-transparent outline-none placeholder:text-muted-foreground/50"
                 disabled={isLoading}
               />

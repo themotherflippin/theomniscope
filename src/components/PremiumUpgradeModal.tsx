@@ -55,8 +55,7 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4 py-8"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
         <motion.div
@@ -64,7 +63,7 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 60, opacity: 0, scale: 0.96 }}
           transition={spring}
-          className="w-full max-w-md relative mx-4 mb-4 sm:mb-0"
+          className="w-full max-w-md relative max-h-[85vh] overflow-y-auto scrollbar-thin"
         >
           <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-card/95 to-card/80 backdrop-blur-2xl backdrop-saturate-[1.4] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)] overflow-hidden">
             {/* Top accent */}
