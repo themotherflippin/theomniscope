@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail, Lock, Plus, Copy, Check, Trash2, ArrowLeft,
-  Activity, Clock, Shield, Tag, FileText,
-  CheckCircle, Loader2, RefreshCw, Zap, Database, Server,
+  Activity, Clock, Shield, FileText,
+  Loader2, RefreshCw, Zap, Database, Server,
+  Wifi, WifiOff, CreditCard, BarChart3,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
@@ -22,14 +23,29 @@ function generateCode(): string {
 
 const spring = { type: "spring" as const, stiffness: 500, damping: 30 };
 
-function StatusDot({ ok = true }: { ok?: boolean }) {
-  return (
-    <span className={`inline-block w-1.5 h-1.5 rounded-full ${ok ? "bg-[hsl(var(--success))]" : "bg-[hsl(var(--danger))]"}`} />
-  );
+type ServiceStatus = "healthy" | "error" | "not_configured" | "loading";
+
+interface HealthData {
+  database: { status: string; latencyMs: number; stats: Record<string, number | string | null> };
+  moralis: { status: string; latencyMs?: number };
+  cmc: { status: string; latencyMs?: number };
+  stripe: { status: string; latencyMs?: number };
+  edgeFunctions: { status: string };
+  storage: { status: string; buckets?: string[] };
 }
 
-function MetricCard({ icon: Icon, label, value, color, ok = true }: {
-  icon: React.ElementType; label: string; value: string; color: string; ok?: boolean;
+function StatusDot({ status }: { status: ServiceStatus }) {
+  const colors: Record<ServiceStatus, string> = {
+    healthy: "bg-[hsl(var(--success))]",
+    error: "bg-[hsl(var(--danger))]",
+    not_configured: "bg-[hsl(var(--warning))]",
+    loading: "bg-muted-foreground animate-pulse",
+  };
+  return <span className={`inline-block w-1.5 h-1.5 rounded-full ${colors[status]}`} />;
+}
+
+function MetricCard({ icon: Icon, label, value, color, status = "healthy" as ServiceStatus, suffix }: {
+  icon: React.ElementType; label: string; value: string; color: string; status?: ServiceStatus; suffix?: string;
 }) {
   return (
     <motion.div
@@ -44,22 +60,40 @@ function MetricCard({ icon: Icon, label, value, color, ok = true }: {
       </div>
       <div className="flex items-center gap-1.5">
         <span className="text-sm font-mono font-bold">{value}</span>
-        <StatusDot ok={ok} />
+        {suffix && <span className="text-[9px] text-muted-foreground">{suffix}</span>}
+        <StatusDot status={status} />
       </div>
     </motion.div>
   );
 }
 
-function ServiceRow({ name, ok = true }: { name: string; ok?: boolean }) {
+function ServiceRow({ name, status, latency }: { name: string; status: ServiceStatus; latency?: number }) {
+  const statusLabel: Record<ServiceStatus, string> = {
+    healthy: "OK", error: "Down", not_configured: "N/A", loading: "...",
+  };
   return (
     <div className="flex items-center justify-between py-1">
       <span className="text-[11px] text-muted-foreground">{name}</span>
-      <div className="flex items-center gap-1">
-        <StatusDot ok={ok} />
-        <span className="text-[9px] text-muted-foreground">{ok ? "OK" : "Down"}</span>
+      <div className="flex items-center gap-1.5">
+        {latency !== undefined && status === "healthy" && (
+          <span className="text-[8px] font-mono text-muted-foreground">{latency}ms</span>
+        )}
+        <StatusDot status={status} />
+        <span className="text-[9px] text-muted-foreground">{statusLabel[status]}</span>
       </div>
     </div>
   );
+}
+
+function formatTimeAgo(dateStr: string | null): string {
+  if (!dateStr) return "Never";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 export default function Admin() {
@@ -71,6 +105,8 @@ export default function Admin() {
   const [genLoading, setGenLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [scannerRunning, setScannerRunning] = useState(false);
+  const [health, setHealth] = useState<HealthData | null>(null);
+  const [healthLoading, setHealthLoading] = useState(true);
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -94,6 +130,15 @@ export default function Admin() {
     }
   }, []);
 
+  const fetchHealth = useCallback(async () => {
+    setHealthLoading(true);
+    try {
+      const { data } = await supabase.functions.invoke("admin-health");
+      if (data) setHealth(data as HealthData);
+    } catch {}
+    setHealthLoading(false);
+  }, []);
+
   const fetchCodes = useCallback(async () => {
     const { data } = await supabase
       .from("invitation_codes")
@@ -103,8 +148,11 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    if (authenticated) fetchCodes();
-  }, [authenticated, fetchCodes]);
+    if (authenticated) {
+      fetchCodes();
+      fetchHealth();
+    }
+  }, [authenticated, fetchCodes, fetchHealth]);
 
   const createCode = async () => {
     setGenLoading(true);
@@ -128,9 +176,10 @@ export default function Admin() {
     setScannerRunning(true);
     try { await supabase.functions.invoke("alert-scanner", { body: {} }); } catch {}
     setScannerRunning(false);
+    fetchHealth(); // Refresh stats after scan
   };
 
-  // --- Login screen ---
+  // --- Login ---
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
@@ -145,26 +194,11 @@ export default function Admin() {
           <div className="space-y-2.5">
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="email"
-                placeholder={t("admin.emailPlaceholder")}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="off"
-                className="pl-10 h-10 text-sm"
-              />
+              <Input type="email" placeholder={t("admin.emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" className="pl-10 h-10 text-sm" />
             </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder={t("admin.passwordPlaceholder")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && verifyCredentials()}
-                autoComplete="off"
-                className="pl-10 h-10 text-sm"
-              />
+              <Input type="password" placeholder={t("admin.passwordPlaceholder")} value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && verifyCredentials()} autoComplete="off" className="pl-10 h-10 text-sm" />
             </div>
             {loginError && <p className="text-xs text-destructive">{loginError}</p>}
             <Button className="w-full h-10" onClick={verifyCredentials} disabled={!email || !password}>
@@ -176,7 +210,22 @@ export default function Admin() {
     );
   }
 
-  // --- Dashboard (single viewport, no scroll) ---
+  // --- Derived values from real health data ---
+  const dbStatus = (health?.database?.status ?? "loading") as ServiceStatus;
+  const dbLatency = health?.database?.latencyMs;
+  const moralisStatus = (health?.moralis?.status ?? "loading") as ServiceStatus;
+  const cmcStatus = (health?.cmc?.status ?? "loading") as ServiceStatus;
+  const stripeStatus = (health?.stripe?.status ?? "loading") as ServiceStatus;
+  const storageStatus = (health?.storage?.status ?? "loading") as ServiceStatus;
+  const efStatus = (health?.edgeFunctions?.status ?? "loading") as ServiceStatus;
+
+  const stats = health?.database?.stats;
+  const totalAlerts = stats?.alerts ?? "–";
+  const activeRules = stats?.activeRules ?? "–";
+  const activeWatchlists = stats?.activeWatchlists ?? "–";
+  const walletScans = stats?.walletScans ?? "–";
+  const lastAlert = formatTimeAgo(stats?.lastAlert as string | null);
+
   const usedCodes = codes.filter(c => c.is_used).length;
   const freeCodes = codes.filter(c => !c.is_used).length;
 
@@ -190,33 +239,66 @@ export default function Admin() {
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/")}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <h1 className="text-sm font-display font-bold tracking-tight">Administration</h1>
-        <div className="w-8" />
+        <div className="flex items-center gap-2">
+          <h1 className="text-sm font-display font-bold tracking-tight">Administration</h1>
+          {healthLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={fetchHealth} disabled={healthLoading}>
+          <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? "animate-spin" : ""}`} />
+        </Button>
       </div>
 
       {/* Content */}
       <div className="flex-1 px-3 pb-3 flex flex-col gap-2.5 min-h-0">
 
-        {/* Row 1: Metrics */}
+        {/* Row 1: Live Metrics */}
         <div className="grid grid-cols-4 gap-2 shrink-0">
-          <MetricCard icon={Activity} label="Latency" value="320ms" color="var(--chart-cyan)" />
-          <MetricCard icon={Zap} label="Errors" value="0.2%" color="var(--success)" />
-          <MetricCard icon={Clock} label="Scanner" value="Active" color="var(--chart-blue)" />
-          <MetricCard icon={FileText} label="Reports" value="Idle" color="var(--warning)" />
+          <MetricCard
+            icon={Database}
+            label="DB"
+            value={dbLatency !== undefined ? `${dbLatency}` : "–"}
+            suffix="ms"
+            color="var(--chart-cyan)"
+            status={dbStatus}
+          />
+          <MetricCard
+            icon={Activity}
+            label="Alerts"
+            value={String(totalAlerts)}
+            color="var(--warning)"
+            status={Number(totalAlerts) > 0 ? "healthy" : "healthy"}
+          />
+          <MetricCard
+            icon={Zap}
+            label="Rules"
+            value={String(activeRules)}
+            suffix="active"
+            color="var(--success)"
+            status={dbStatus}
+          />
+          <MetricCard
+            icon={BarChart3}
+            label="Scans"
+            value={String(walletScans)}
+            color="var(--chart-blue)"
+            status={dbStatus}
+          />
         </div>
 
         {/* Row 2: Services + Actions */}
         <div className="grid grid-cols-2 gap-2 shrink-0">
-          {/* Services */}
+          {/* Live Services */}
           <div className="rounded-xl border border-border/30 p-2.5" style={{ background: "hsl(var(--widget-market) / 0.5)" }}>
             <div className="flex items-center gap-1.5 mb-1.5">
               <Server className="w-3 h-3 text-[hsl(var(--chart-blue))]" />
               <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Services</span>
             </div>
-            <ServiceRow name="Moralis API" />
-            <ServiceRow name="Database" />
-            <ServiceRow name="Edge Functions" />
-            <ServiceRow name="Storage" />
+            <ServiceRow name="Moralis API" status={moralisStatus} latency={health?.moralis?.latencyMs} />
+            <ServiceRow name="CoinMarketCap" status={cmcStatus} latency={health?.cmc?.latencyMs} />
+            <ServiceRow name="Stripe" status={stripeStatus} latency={health?.stripe?.latencyMs} />
+            <ServiceRow name="Database" status={dbStatus} latency={dbLatency} />
+            <ServiceRow name="Edge Functions" status={efStatus} />
+            <ServiceRow name="Storage" status={storageStatus} />
           </div>
 
           {/* Quick Actions */}
@@ -225,41 +307,34 @@ export default function Admin() {
               <Zap className="w-3 h-3 text-[hsl(var(--chart-cyan))]" />
               <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Actions</span>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full text-[10px] h-7 gap-1"
-              onClick={runScanner}
-              disabled={scannerRunning}
-            >
+            <Button size="sm" variant="outline" className="w-full text-[10px] h-7 gap-1" onClick={runScanner} disabled={scannerRunning}>
               {scannerRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
               Run Scanner
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full text-[10px] h-7 gap-1"
-              onClick={createCode}
-              disabled={genLoading}
-            >
+            <Button size="sm" variant="outline" className="w-full text-[10px] h-7 gap-1" onClick={createCode} disabled={genLoading}>
               {genLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
               {t("admin.generate")}
             </Button>
-            <div className="flex items-center justify-center gap-3 mt-auto">
-              <div className="text-center">
+            <div className="flex items-center justify-between gap-2 mt-auto text-center">
+              <div className="flex-1">
                 <p className="text-sm font-bold font-mono">{freeCodes}</p>
                 <p className="text-[8px] text-muted-foreground uppercase">Available</p>
               </div>
               <div className="w-px h-5 bg-border/40" />
-              <div className="text-center">
+              <div className="flex-1">
                 <p className="text-sm font-bold font-mono">{usedCodes}</p>
                 <p className="text-[8px] text-muted-foreground uppercase">Used</p>
+              </div>
+              <div className="w-px h-5 bg-border/40" />
+              <div className="flex-1">
+                <p className="text-[9px] font-mono text-muted-foreground">{lastAlert}</p>
+                <p className="text-[8px] text-muted-foreground uppercase">Last Alert</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Row 3: Invitation Codes (scrollable list) */}
+        {/* Row 3: Invitation Codes */}
         <div
           className="rounded-xl border border-border/30 p-2.5 flex-1 min-h-0 flex flex-col"
           style={{ background: "hsl(var(--widget-alerts) / 0.4)" }}
@@ -267,9 +342,7 @@ export default function Admin() {
           <div className="flex items-center justify-between mb-2 shrink-0">
             <div className="flex items-center gap-1.5">
               <Shield className="w-3 h-3 text-[hsl(var(--warning))]" />
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
-                Access Codes
-              </span>
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Access Codes</span>
             </div>
             <span className="text-[9px] text-muted-foreground font-mono">{codes.length} total</span>
           </div>
