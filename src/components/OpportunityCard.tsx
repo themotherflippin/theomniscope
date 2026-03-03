@@ -86,7 +86,13 @@ ${opp.topReasons.map(r => `• ${r}`).join('\n')}
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`gradient-card-elevated rounded-xl overflow-hidden ${opp.capped ? 'border-danger/20' : ''}`}
+      className={`rounded-xl overflow-hidden border ${
+        opp.capped ? 'bg-[hsl(0_80%_58%/0.05)] border-danger/25' :
+        opp.action === 'STRONG_BUY' ? 'bg-[hsl(152_72%_42%/0.05)] border-success/25' :
+        opp.action === 'BUY' ? 'bg-[hsl(195_95%_50%/0.05)] border-primary/25' :
+        opp.action === 'WATCH' ? 'bg-[hsl(42_95%_55%/0.05)] border-warning/25' :
+        'bg-[hsl(0_80%_58%/0.04)] border-danger/20'
+      }`}
     >
       {/* Header */}
       <div onClick={onClick} className="p-4 cursor-pointer">

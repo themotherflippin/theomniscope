@@ -195,7 +195,14 @@ export default function CasesListPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 onClick={() => navigate(`/cases/${c.id}`)}
-                className="w-full text-left gradient-card rounded-xl p-4 hover:bg-accent/50 transition-colors"
+                className={`w-full text-left rounded-xl p-4 border transition-colors hover:bg-accent/30 ${
+                  PRIORITY_COLORS[c.priority]?.replace('text-', 'border-l-4 border-l-').split(' ')[0] || ''
+                } ${
+                  c.priority === 'critical' ? 'bg-[hsl(0_80%_58%/0.04)] border border-danger/20' :
+                  c.priority === 'high' ? 'bg-[hsl(42_95%_55%/0.04)] border border-warning/20' :
+                  c.priority === 'medium' ? 'bg-[hsl(195_95%_50%/0.04)] border border-primary/20' :
+                  'gradient-card'
+                }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
