@@ -462,6 +462,8 @@ export type Database = {
           code: string
           created_at: string
           device_id: string | null
+          duration: string
+          expires_at: string | null
           id: string
           is_used: boolean
           used_at: string | null
@@ -470,6 +472,8 @@ export type Database = {
           code: string
           created_at?: string
           device_id?: string | null
+          duration?: string
+          expires_at?: string | null
           id?: string
           is_used?: boolean
           used_at?: string | null
@@ -478,6 +482,8 @@ export type Database = {
           code?: string
           created_at?: string
           device_id?: string | null
+          duration?: string
+          expires_at?: string | null
           id?: string
           is_used?: boolean
           used_at?: string | null
