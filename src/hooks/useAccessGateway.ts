@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers/react";
-import { BrowserProvider } from "ethers";
+import { useWeb3ModalAccount } from "@web3modal/ethers/react";
 import { supabase } from "@/integrations/supabase/client";
 
 const SESSION_KEY = "oracle_session_token";
@@ -36,7 +35,6 @@ export interface AccessStatus {
 
 export function useAccessGateway() {
   const { address, isConnected, chainId } = useWeb3ModalAccount();
-  const { walletProvider } = useWeb3ModalProvider();
 
   const [status, setStatus] = useState<AccessStatus>({
     hasAccess: false,
@@ -93,33 +91,22 @@ export function useAccessGateway() {
 
   // When WalletConnect connects, authenticate with backend
   useEffect(() => {
-    if (isConnected && address && walletProvider && !status.walletAddress) {
+    if (isConnected && address && !status.walletAddress) {
       authenticateWallet(address, chainId || 1);
     }
-  }, [isConnected, address, walletProvider]);
+  }, [isConnected, address]);
 
   const authenticateWallet = useCallback(async (walletAddress: string, chain: number) => {
     setWalletConnecting(true);
     setError(null);
 
     try {
-      if (!walletProvider) {
-        setError("Wallet provider not available.");
-        return;
-      }
-
-      const provider = new BrowserProvider(walletProvider);
-      const signer = await provider.getSigner();
       const deviceId = getDeviceId();
 
-      const message = `Sign this message to access Oracle System.\n\nDevice: ${deviceId}\nTimestamp: ${Date.now()}`;
-      const signature = await signer.signMessage(message);
-
+      // No signature required — just connect the wallet address
       const { data, error: fnError } = await supabase.functions.invoke("access-wallet-auth", {
         body: {
           wallet_address: walletAddress,
-          signature,
-          message,
           device_id: deviceId,
           chain_id: chain,
         },
@@ -144,15 +131,11 @@ export function useAccessGateway() {
         setError(null);
       }
     } catch (err: any) {
-      if (err?.code === "ACTION_REJECTED" || err?.code === 4001) {
-        setError("Signature rejected by user.");
-      } else {
-        setError(err?.message || "Wallet authentication failed.");
-      }
+      setError(err?.message || "Wallet connection failed.");
     } finally {
       setWalletConnecting(false);
     }
-  }, [walletProvider]);
+  }, []);
 
   const startCheckout = useCallback(async () => {
     setCheckoutLoading(true);
