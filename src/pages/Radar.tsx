@@ -167,7 +167,7 @@ export default function Radar({ prefs }: RadarProps) {
       <main className="px-4 py-4 space-y-6">
       <Accordion type="multiple" className="space-y-2">
           {/* Top Gainers */}
-          <AccordionItem value="gainers" className="border rounded-xl border-success/20 bg-card/50 backdrop-blur-sm px-3">
+          <AccordionItem value="gainers" className="border rounded-xl border-success/30 bg-[hsl(152_72%_42%/0.06)] backdrop-blur-sm px-3">
             <AccordionTrigger className="py-3 hover:no-underline">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-success" />
@@ -182,7 +182,7 @@ export default function Radar({ prefs }: RadarProps) {
           </AccordionItem>
 
           {/* Top Losers */}
-          <AccordionItem value="losers" className="border rounded-xl border-danger/20 bg-card/50 backdrop-blur-sm px-3">
+          <AccordionItem value="losers" className="border rounded-xl border-danger/30 bg-[hsl(0_80%_58%/0.06)] backdrop-blur-sm px-3">
             <AccordionTrigger className="py-3 hover:no-underline">
               <div className="flex items-center gap-2">
                 <TrendingDown className="w-4 h-4 text-danger" />
@@ -197,7 +197,7 @@ export default function Radar({ prefs }: RadarProps) {
           </AccordionItem>
 
           {/* Top Volume */}
-          <AccordionItem value="volume" className="border rounded-xl border-primary/20 bg-card/50 backdrop-blur-sm px-3">
+          <AccordionItem value="volume" className="border rounded-xl border-primary/30 bg-[hsl(195_95%_50%/0.06)] backdrop-blur-sm px-3">
             <AccordionTrigger className="py-3 hover:no-underline">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-primary" />
@@ -212,7 +212,7 @@ export default function Radar({ prefs }: RadarProps) {
           </AccordionItem>
 
           {/* New Listings */}
-          <AccordionItem value="new" className="border rounded-xl border-warning/20 bg-card/50 backdrop-blur-sm px-3">
+          <AccordionItem value="new" className="border rounded-xl border-warning/30 bg-[hsl(42_95%_55%/0.06)] backdrop-blur-sm px-3">
             <AccordionTrigger className="py-3 hover:no-underline">
               <div className="flex items-center gap-2">
                 <Flame className="w-4 h-4 text-warning" />
@@ -227,7 +227,7 @@ export default function Radar({ prefs }: RadarProps) {
 
           {/* Danger Zone */}
           {highRisk.length > 0 && (
-            <AccordionItem value="danger" className="border rounded-xl border-danger/20 bg-card/50 backdrop-blur-sm px-3">
+            <AccordionItem value="danger" className="border rounded-xl border-danger/30 bg-[hsl(0_80%_58%/0.08)] backdrop-blur-sm px-3">
               <AccordionTrigger className="py-3 hover:no-underline">
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="w-4 h-4 text-danger" />

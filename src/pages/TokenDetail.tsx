@@ -121,7 +121,7 @@ export default function TokenDetail() {
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="gradient-card rounded-xl p-3">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="rounded-xl p-3 border bg-[hsl(195_95%_50%/0.05)] border-primary/20">
             <h3 className="text-[10px] font-display text-muted-foreground mb-2 uppercase tracking-wider">{t('token.metrics')}</h3>
             <div className="space-y-2">
               {[
@@ -141,7 +141,7 @@ export default function TokenDetail() {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="gradient-card rounded-xl p-3">
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="rounded-xl p-3 border bg-[hsl(265_40%_50%/0.05)] border-[hsl(265_40%_50%/0.2)]">
             <h3 className="text-[10px] font-display text-muted-foreground mb-2 uppercase tracking-wider">{t('token.indicators')}</h3>
             <div className="space-y-2">
               {[
@@ -176,7 +176,7 @@ export default function TokenDetail() {
           </motion.div>
         )}
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="gradient-card rounded-xl p-4">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="rounded-xl p-4 border bg-[hsl(152_72%_42%/0.05)] border-success/20">
           <h3 className="text-[10px] font-display text-muted-foreground mb-3 uppercase tracking-wider">{t('token.onChain')}</h3>
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">

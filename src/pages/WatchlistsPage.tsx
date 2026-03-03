@@ -23,9 +23,14 @@ type WatchlistTab = "all" | "wallet" | "token";
 
 const typeIcons = { wallet: Wallet, token: Coins, cluster: Layers };
 const typeColors = {
-  wallet: "bg-primary/10 text-primary",
-  token: "bg-warning/10 text-warning",
-  cluster: "bg-accent/10 text-accent-foreground",
+  wallet: "bg-primary/15 text-primary",
+  token: "bg-warning/15 text-warning",
+  cluster: "bg-accent/15 text-accent-foreground",
+};
+const typeBgColors = {
+  wallet: "bg-[hsl(195_95%_50%/0.05)] border-primary/25",
+  token: "bg-[hsl(42_95%_55%/0.05)] border-warning/25",
+  cluster: "bg-accent/5 border-accent/25",
 };
 
 export default function WatchlistsPage() {
@@ -148,9 +153,9 @@ export default function WatchlistsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ delay: i * 0.02 }}
-                    className={`flex items-center gap-3 p-3 rounded-xl gradient-card border border-border/50 ${
-                      !item.is_enabled ? "opacity-50" : ""
-                    }`}
+                    className={`flex items-center gap-3 p-3 rounded-xl border ${
+                      typeBgColors[item.type as keyof typeof typeBgColors] ?? "gradient-card border-border/50"
+                    } ${!item.is_enabled ? "opacity-50" : ""}`}
                   >
                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${colorClass}`}>
                       <Icon className="w-4 h-4" />

@@ -29,7 +29,11 @@ export function SignalCard({ signal, onClick }: SignalCardProps) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       whileTap={{ scale: 0.98 }}
-      className="gradient-card-elevated rounded-xl p-4 cursor-pointer transition-all group"
+      className={`rounded-xl p-4 cursor-pointer transition-all group border ${
+        signal.type === 'ENTRY' ? 'bg-[hsl(152_72%_42%/0.05)] border-success/20' :
+        signal.type === 'EXIT' ? 'bg-[hsl(0_80%_58%/0.05)] border-danger/20' :
+        'bg-[hsl(42_95%_55%/0.05)] border-warning/20'
+      }`}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2.5">

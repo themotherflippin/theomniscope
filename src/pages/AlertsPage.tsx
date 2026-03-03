@@ -263,7 +263,7 @@ function AlertItem({ alert, index, onRead }: { alert: Alert; index: number; onRe
       onClick={() => onRead(alert.id)}
       className={`relative flex items-start gap-3 px-3 py-3 rounded-xl border cursor-pointer transition-all ${
         !alert.read
-          ? 'bg-card/80 border-border/60 shadow-sm'
+          ? `${pConfig.bg} shadow-sm shadow-current/5`
           : 'bg-transparent border-transparent hover:bg-accent/15'
       }`}
     >
