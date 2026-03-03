@@ -8,7 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const WEEKLY_PRICE_ID = "price_1T6XGt9BLst0JwTs4R2Hu4g7";
+const MONTHLY_PRICE_ID = "price_1T6ypa9BLst0JwTsTtps6ast";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,7 +34,7 @@ serve(async (req) => {
 
     // Create checkout session without requiring auth
     const sessionParams: Record<string, unknown> = {
-      line_items: [{ price: WEEKLY_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: MONTHLY_PRICE_ID, quantity: 1 }],
       mode: "subscription",
       success_url: `${origin}/?payment=success&device_id=${device_id}`,
       cancel_url: `${origin}/?payment=canceled`,

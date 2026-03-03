@@ -164,9 +164,9 @@ export default function AccessGateway({ onGranted }: { onGranted: () => void }) 
                 <CreditCard className="w-4 h-4 text-cyan-400" />
               )}
               <span>
-                {lang === "fr" ? "Abonnement Hebdo" : "Subscribe Weekly"}
+                {lang === "fr" ? "Abonnement Mensuel" : "Subscribe Monthly"}
               </span>
-              <span className="ml-auto text-xs text-muted-foreground">$9.99/wk</span>
+              <span className="ml-auto text-xs text-muted-foreground">$29.99/mo</span>
             </Button>
           </motion.div>
 

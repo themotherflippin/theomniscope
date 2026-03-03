@@ -7,44 +7,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Minimal ERC-721 balanceOf ABI
-const ERC721_BALANCE_ABI = [
-  {
-    inputs: [{ name: "owner", type: "address" }],
-    name: "balanceOf",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-];
-
-interface WalletAuthRequest {
-  wallet_address: string;
-  signature: string;
-  message: string;
-  device_id: string;
-  chain_id?: number;
-}
-
-// Verify signature matches wallet address using ecrecover
-async function verifySignature(message: string, signature: string, expectedAddress: string): Promise<boolean> {
-  try {
-    // Use ethers-like recovery via the Web Crypto API approach
-    // For production, we verify by calling an RPC or using a library
-    // Simplified: we trust the frontend for now but verify NFT server-side
-    // In production, add full ecrecover verification
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 // Check NFT balance via JSON-RPC
 async function checkNftOwnership(walletAddress: string, nftContract: string, rpcUrl: string): Promise<boolean> {
   try {
-    // Encode balanceOf(address) call
     const paddedAddress = walletAddress.toLowerCase().replace("0x", "").padStart(64, "0");
-    const data = `0x70a08231${paddedAddress}`; // balanceOf selector
+    const data = `0x70a08231${paddedAddress}`;
 
     const response = await fetch(rpcUrl, {
       method: "POST",
@@ -71,7 +38,6 @@ async function checkNftOwnership(walletAddress: string, nftContract: string, rpc
   }
 }
 
-// Map chain IDs to RPC endpoints
 function getRpcUrl(chainId: number): string {
   const rpcs: Record<number, string> = {
     1: "https://eth.llamarpc.com",
@@ -81,7 +47,7 @@ function getRpcUrl(chainId: number): string {
     42161: "https://arb1.arbitrum.io/rpc",
     8453: "https://mainnet.base.org",
   };
-  return rpcs[chainId] || rpcs[25]; // Default to Cronos
+  return rpcs[chainId] || rpcs[25];
 }
 
 function generateSessionToken(): string {
@@ -96,28 +62,20 @@ serve(async (req) => {
   }
 
   try {
-    const body: WalletAuthRequest = await req.json();
-    const { wallet_address, signature, message, device_id, chain_id } = body;
+    const body = await req.json();
+    const { wallet_address, device_id, chain_id } = body;
 
-    if (!wallet_address || !device_id || !message || !signature) {
+    // No signature required — just wallet_address and device_id
+    if (!wallet_address || !device_id) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
+        JSON.stringify({ error: "wallet_address and device_id required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const normalizedAddress = wallet_address.toLowerCase();
 
-    // Verify signature
-    const isValid = await verifySignature(message, signature, normalizedAddress);
-    if (!isValid) {
-      return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check NFT ownership
+    // Check NFT ownership server-side
     const nftContract = Deno.env.get("NFT_CONTRACT_ADDRESS");
     const rpcUrl = getRpcUrl(chain_id || 25);
     let hasNft = false;
@@ -127,7 +85,6 @@ serve(async (req) => {
       console.log(`[WALLET-AUTH] NFT check for ${normalizedAddress}: ${hasNft}`);
     }
 
-    // Create or update user access
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -135,9 +92,8 @@ serve(async (req) => {
     );
 
     const sessionToken = generateSessionToken();
-    const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+    const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Upsert user access record
     const { data: existing } = await supabase
       .from("user_access")
       .select("*")
@@ -184,7 +140,6 @@ serve(async (req) => {
       userAccess = data;
     }
 
-    // Log analytics event
     await supabase.from("access_events").insert({
       device_id,
       event_type: hasNft ? "nft_unlock" : "wallet_connect",
