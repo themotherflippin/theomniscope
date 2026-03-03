@@ -8,6 +8,7 @@ import {
   Activity, Shield,
   Loader2, RefreshCw, Zap, Database, Server,
   CreditCard, BarChart3, ChevronLeft, Clock,
+  DollarSign, TrendingUp, Users, Wallet,
 } from "lucide-react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
@@ -39,6 +40,18 @@ interface HealthData {
   stripe: { status: string; latencyMs?: number };
   edgeFunctions: { status: string };
   storage: { status: string; buckets?: string[] };
+  accounting?: {
+    freeUsers: number;
+    paidUsers: number;
+    nftUsers: number;
+    totalSales: number;
+    croSales: number;
+    stripeSales: number;
+    totalRevenueCRO: number;
+    totalRevenueUSD: number;
+    dailyRevenue: { date: string; cro: number; usd: number; sales: number }[];
+    error?: string;
+  };
 }
 
 const DURATION_DAYS: Record<CodeDuration, number | null> = {
@@ -524,6 +537,92 @@ export default function Admin() {
             </div>
           </div>
         </div>
+
+        {/* Row 5: Accounting / Revenue */}
+        {health?.accounting && !health.accounting.error && (
+          <div
+            className="rounded-xl border border-border/30 p-2.5 shrink-0"
+            style={{ background: "hsl(var(--success) / 0.06)" }}
+          >
+            <div className="flex items-center gap-1.5 mb-2">
+              <DollarSign className="w-3 h-3 text-[hsl(var(--success))]" />
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Comptabilité & Revenus</span>
+            </div>
+
+            {/* Pass breakdown */}
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="rounded-lg border border-border/20 bg-card/40 p-2 text-center">
+                <Users className="w-3.5 h-3.5 mx-auto mb-0.5 text-muted-foreground" />
+                <p className="text-lg font-bold font-mono">{health.accounting.freeUsers}</p>
+                <p className="text-[7px] text-muted-foreground uppercase">Pass Gratuit</p>
+              </div>
+              <div className="rounded-lg border border-border/20 bg-card/40 p-2 text-center">
+                <CreditCard className="w-3.5 h-3.5 mx-auto mb-0.5 text-[hsl(var(--success))]" />
+                <p className="text-lg font-bold font-mono text-[hsl(var(--success))]">{health.accounting.paidUsers}</p>
+                <p className="text-[7px] text-muted-foreground uppercase">Pass Payant</p>
+              </div>
+              <div className="rounded-lg border border-border/20 bg-card/40 p-2 text-center">
+                <Shield className="w-3.5 h-3.5 mx-auto mb-0.5 text-[hsl(var(--chart-cyan))]" />
+                <p className="text-lg font-bold font-mono text-[hsl(var(--chart-cyan))]">{health.accounting.nftUsers}</p>
+                <p className="text-[7px] text-muted-foreground uppercase">NFT Holders</p>
+              </div>
+            </div>
+
+            {/* Revenue totals */}
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="rounded-lg border border-border/20 bg-card/40 p-2">
+                <div className="flex items-center gap-1 mb-1">
+                  <Wallet className="w-3 h-3 text-[hsl(var(--chart-blue))]" />
+                  <span className="text-[8px] text-muted-foreground uppercase font-medium">Ventes CRO</span>
+                </div>
+                <p className="text-sm font-bold font-mono">{health.accounting.croSales} <span className="text-[9px] text-muted-foreground">ventes</span></p>
+                <p className="text-[10px] font-mono text-[hsl(var(--success))]">{health.accounting.totalRevenueCRO.toLocaleString()} CRO</p>
+              </div>
+              <div className="rounded-lg border border-border/20 bg-card/40 p-2">
+                <div className="flex items-center gap-1 mb-1">
+                  <CreditCard className="w-3 h-3 text-[hsl(var(--warning))]" />
+                  <span className="text-[8px] text-muted-foreground uppercase font-medium">Ventes Stripe</span>
+                </div>
+                <p className="text-sm font-bold font-mono">{health.accounting.stripeSales} <span className="text-[9px] text-muted-foreground">ventes</span></p>
+                <p className="text-[10px] font-mono text-[hsl(var(--success))]">${health.accounting.totalRevenueUSD.toFixed(2)}</p>
+              </div>
+            </div>
+
+            {/* Daily revenue chart (last 7 days) */}
+            <div className="rounded-lg border border-border/20 bg-card/40 p-2">
+              <div className="flex items-center gap-1 mb-2">
+                <TrendingUp className="w-3 h-3 text-[hsl(var(--success))]" />
+                <span className="text-[8px] text-muted-foreground uppercase font-medium">Évolution 7 jours</span>
+                <span className="ml-auto text-[8px] font-mono text-muted-foreground">
+                  Total: {health.accounting.totalSales} ventes
+                </span>
+              </div>
+              <div className="flex items-end gap-1 h-16">
+                {health.accounting.dailyRevenue.map((day) => {
+                  const maxSales = Math.max(...health.accounting!.dailyRevenue.map(d => d.sales), 1);
+                  const height = day.sales > 0 ? Math.max((day.sales / maxSales) * 100, 10) : 4;
+                  const dayLabel = new Date(day.date).toLocaleDateString("fr-FR", { weekday: "short" }).slice(0, 2);
+                  return (
+                    <div key={day.date} className="flex-1 flex flex-col items-center gap-0.5">
+                      <div className="w-full flex flex-col items-center justify-end" style={{ height: "48px" }}>
+                        {day.sales > 0 && (
+                          <span className="text-[7px] font-mono font-bold mb-0.5">{day.sales}</span>
+                        )}
+                        <div
+                          className="w-full rounded-sm bg-[hsl(var(--success))]"
+                          style={{ height: `${height}%`, minHeight: "2px", opacity: day.sales > 0 ? 1 : 0.2 }}
+                        />
+                      </div>
+                      <span className="text-[7px] text-muted-foreground">{dayLabel}</span>
+                      {day.usd > 0 && <span className="text-[6px] font-mono text-[hsl(var(--warning))]">${day.usd.toFixed(0)}</span>}
+                      {day.cro > 0 && <span className="text-[6px] font-mono text-[hsl(var(--chart-blue))]">{day.cro}₡</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
