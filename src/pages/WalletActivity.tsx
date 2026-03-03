@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import WalletActivityWidget from "@/components/WalletActivityWidget";
 import WalletPortfolioWidget from "@/components/wallet/WalletPortfolioWidget";
+import WalletSearchHistory from "@/components/WalletSearchHistory";
+import { useWalletSearchHistory } from "@/hooks/useWalletSearchHistory";
 import { useI18n } from "@/lib/i18n";
 
 export default function WalletActivity() {
@@ -16,6 +18,7 @@ export default function WalletActivity() {
 
   const [inputValue, setInputValue] = useState(walletParam);
   const [activeAddress, setActiveAddress] = useState(walletParam);
+  const { history, addToHistory, removeFromHistory, clearHistory } = useWalletSearchHistory();
 
   useEffect(() => {
     const w = searchParams.get("wallet") || "";
@@ -32,6 +35,7 @@ export default function WalletActivity() {
       if (/^0x[a-fA-F0-9]{40}$/.test(trimmed)) {
         setActiveAddress(trimmed);
         setSearchParams({ wallet: trimmed });
+        addToHistory(trimmed);
       }
     },
     [inputValue, setSearchParams]
@@ -73,6 +77,18 @@ export default function WalletActivity() {
             {t('wallet.explore')}
           </Button>
         </form>
+
+        <WalletSearchHistory
+          history={history}
+          onSelect={(addr) => {
+            setInputValue(addr);
+            setActiveAddress(addr);
+            setSearchParams({ wallet: addr });
+            addToHistory(addr);
+          }}
+          onRemove={removeFromHistory}
+          onClear={clearHistory}
+        />
 
         {!activeAddress && (
           <div className="flex flex-col items-center justify-center py-14 text-center">
