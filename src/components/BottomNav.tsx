@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Search, FolderOpen, Compass, Settings, Lock } from "lucide-react";
+import { LayoutDashboard, Search, FolderOpen, Compass, Settings, Lock, Wallet } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { MoreSheet } from "@/components/MoreSheet";
 import { usePremium } from "@/hooks/usePremium";
@@ -23,8 +23,8 @@ export function BottomNav({ unreadAlerts = 0 }: BottomNavProps) {
   const tabs = [
     { path: "/", label: "Center", icon: LayoutDashboard, hidden: false, premiumOnly: false },
     { path: "/lookup", label: "Investigate", icon: Search, hidden: false, premiumOnly: false },
+    { path: "/activity", label: "Wallet", icon: Wallet, hidden: false, premiumOnly: false },
     { id: "hub", label: "Hub", icon: Compass, hidden: false, premiumOnly: false },
-    { path: "/cases", label: "Cases", icon: FolderOpen, hidden: isSimple, premiumOnly: false },
     { path: "/profile", label: "Settings", icon: Settings, hidden: false, premiumOnly: false },
   ].filter(t => !t.hidden);
 

@@ -7,11 +7,15 @@ import { MiniChart } from '@/components/MiniChart';
 import { useI18n } from '@/lib/i18n';
 import { formatPrice, formatNumber, formatPct, shortenAddress } from '@/lib/formatters';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import {
   Eye, Search, Copy, Shield, ShieldAlert, ShieldCheck, Users,
   BarChart3, Droplets, Clock, TrendingUp, Activity, Loader2,
-  AlertTriangle, CheckCircle, XCircle, Wallet, ArrowLeftRight
+  AlertTriangle, CheckCircle, XCircle, Wallet, ArrowLeftRight,
+  Network, Bell, Plus, ChevronRight
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AddToWatchlistButton } from '@/components/AddToWatchlistButton';
 
 interface LookupResult {
   address: string;
@@ -156,6 +160,7 @@ export default function Lookup() {
   const [result, setResult] = useState<LookupResult | null>(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
   const { t } = useI18n();
 
   // Read query param on mount
@@ -422,6 +427,52 @@ export default function Lookup() {
                     </div>
                   </>
                 )}
+              </div>
+
+              {/* Quick Actions */}
+              <div className="gradient-card rounded-xl p-4 space-y-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <ChevronRight className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-display font-semibold text-foreground">Actions rapides</span>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-between text-xs h-10"
+                  onClick={() => navigate(`/wallet/${result.address}`)}
+                >
+                  <span className="flex items-center gap-2">
+                    <Network className="w-4 h-4 text-primary" />
+                    Scanner & Cluster Intelligence
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-between text-xs h-10"
+                  onClick={() => navigate(`/activity?wallet=${result.address}`)}
+                >
+                  <span className="flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-primary" />
+                    Voir l'activité du wallet
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-between text-xs h-10"
+                  onClick={() => navigate(`/alert-rules`)}
+                >
+                  <span className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-warning" />
+                    Créer une alerte sur ce token
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </Button>
+
+                <AddToWatchlistButton subject={result.address} type="token" label={result.symbol} />
               </div>
             </motion.div>
           )}
