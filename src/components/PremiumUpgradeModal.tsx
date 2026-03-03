@@ -45,6 +45,8 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
 
   const walletConnected = isWalletConnected || !!premium.walletAddress;
 
+  const isPremiumUser = premium.isPremium;
+
   if (!open) return null;
 
   return (
@@ -68,7 +70,75 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
             {/* Top accent */}
             <div className="h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
 
-            {/* Success state */}
+            {isPremiumUser ? (
+              /* ===== PREMIUM WELCOME VIEW ===== */
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-5 space-y-4"
+              >
+                <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors z-10">
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="text-center space-y-2 pt-1">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ ...spring, delay: 0.1 }}
+                    className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mx-auto"
+                  >
+                    <Sparkles className="w-7 h-7 text-primary" />
+                  </motion.div>
+                  <h2 className="text-lg font-display font-bold text-foreground">Premium Actif</h2>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[hsl(42_95%_50%/0.12)] border border-[hsl(42_95%_50%/0.25)]">
+                    <Zap className="w-3 h-3 text-[hsl(42,95%,50%)]" />
+                    <span className="text-[10px] font-bold text-[hsl(42,95%,50%)] uppercase tracking-widest">
+                      {premium.source === 'subscription' ? 'Abonnement' : premium.source === 'nft' ? 'NFT Pass' : 'Voucher'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
+                    Toutes les fonctionnalités Premium sont débloquées. Voici ce que vous avez :
+                  </p>
+                </div>
+
+                <div className="space-y-2 py-1">
+                  {FEATURES.map(({ icon: Icon, label }, i) => (
+                    <motion.div
+                      key={label}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05 * i }}
+                      className="flex items-center gap-2.5"
+                    >
+                      <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <span className="text-xs text-foreground/80">{label}</span>
+                      <Sparkles className="w-2.5 h-2.5 text-primary/40 ml-auto" />
+                    </motion.div>
+                  ))}
+                </div>
+
+                {walletConnected && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[11px] text-emerald-300 font-mono truncate">
+                      {premium.walletAddress?.slice(0, 6)}…{premium.walletAddress?.slice(-4)}
+                    </span>
+                  </div>
+                )}
+
+                <Button
+                  onClick={onClose}
+                  className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-sm gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Compris !
+                </Button>
+              </motion.div>
+            ) : (
+            /* ===== UPGRADE VIEW (original) ===== */
             <AnimatePresence mode="wait">
               {success ? (
                 <motion.div
@@ -149,7 +219,6 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
 
                   {/* Actions */}
                   <div className="space-y-2">
-                    {/* Connect Wallet */}
                     <motion.div whileTap={{ scale: 0.97 }} transition={spring}>
                       <Button
                         onClick={() => openWallet()}
@@ -161,7 +230,6 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
                       </Button>
                     </motion.div>
 
-                    {/* Subscribe */}
                     <motion.div whileTap={{ scale: 0.97 }} transition={spring}>
                       <Button
                         onClick={startCheckout}
@@ -175,7 +243,6 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
                       </Button>
                     </motion.div>
 
-                    {/* Voucher */}
                     <div>
                       <button
                         onClick={() => setShowCodeInput(!showCodeInput)}
@@ -213,7 +280,6 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
                     </div>
                   </div>
 
-                  {/* Maybe later */}
                   <button
                     onClick={onClose}
                     className="w-full text-center text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors py-1"
@@ -221,7 +287,6 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
                     Maybe later
                   </button>
 
-                  {/* Error */}
                   <AnimatePresence>
                     {error && (
                       <motion.p
@@ -237,6 +302,7 @@ export default function PremiumUpgradeModal({ open, onClose }: { open: boolean; 
                 </motion.div>
               )}
             </AnimatePresence>
+            )}
           </div>
         </motion.div>
       </motion.div>
