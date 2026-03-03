@@ -19,7 +19,7 @@ interface MoreSheetProps {
 
 const hubItems = [
   { icon: Eye, label: "Watchlists", path: "/watchlists", color: "from-blue-500/20 to-blue-600/5", iconColor: "text-blue-500", proOnly: false, premiumOnly: false },
-  { icon: Zap, label: "Alert Rules", path: "/alert-rules", color: "from-amber-500/20 to-amber-600/5", iconColor: "text-amber-500", proOnly: false, premiumOnly: true },
+  { icon: Zap, label: "Alert Rules", path: "/alert-rules", color: "from-amber-500/20 to-amber-600/5", iconColor: "text-amber-500", proOnly: false, premiumOnly: false },
   { icon: List, label: "Radar", path: "/radar", color: "from-emerald-500/20 to-emerald-600/5", iconColor: "text-emerald-500", proOnly: false, premiumOnly: false },
   { icon: Network, label: "Clusters", path: "/intel", color: "from-violet-500/20 to-violet-600/5", iconColor: "text-violet-500", proOnly: true, premiumOnly: true },
   { icon: BarChart3, label: "Opportunities", path: "/opportunities", color: "from-cyan-500/20 to-cyan-600/5", iconColor: "text-cyan-500", proOnly: true, premiumOnly: false },
