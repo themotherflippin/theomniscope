@@ -122,14 +122,22 @@ function PortfolioSkeleton() {
 }
 
 // --- Empty ---
-function EmptyPortfolio() {
+function EmptyPortfolio({ address }: { address: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
       <Wallet className="w-10 h-10 text-muted-foreground/40 mb-3" />
-      <p className="text-sm font-medium text-muted-foreground">Aucun actif trouvé</p>
-      <p className="text-[11px] text-muted-foreground/60 mt-1">
-        Ce wallet ne contient pas de tokens ou NFTs détectés
+      <p className="text-sm font-medium text-muted-foreground">Wallet vide sur Cronos</p>
+      <p className="text-[11px] text-muted-foreground/60 mt-1 max-w-xs">
+        Ce wallet ne contient aucun CRO, token ERC20 ou NFT détecté sur la chaîne Cronos.
       </p>
+      <a
+        href={`https://cronoscan.com/address/${address}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[10px] text-primary mt-3 flex items-center gap-1 hover:underline"
+      >
+        <ExternalLink className="w-3 h-3" /> Vérifier sur Cronoscan
+      </a>
     </div>
   );
 }
@@ -145,10 +153,19 @@ export default function WalletPortfolioWidget({ address }: Props) {
   if (!address) return null;
   if (isLoading) return <PortfolioSkeleton />;
   if (isError) {
+    const msg = (error as Error)?.message ?? "";
+    const isQuota = msg.includes("401") || msg.includes("plan") || msg.includes("usage");
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <ShieldAlert className="w-8 h-8 text-danger/60 mb-2" />
-        <p className="text-xs text-danger">{(error as Error)?.message ?? "Erreur de chargement"}</p>
+        <p className="text-xs text-danger">
+          {isQuota ? "Quota API atteint — réessayez demain" : msg || "Erreur de chargement"}
+        </p>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          {isQuota
+            ? "Le quota journalier de requêtes on-chain a été épuisé."
+            : "Vérifiez l'adresse et réessayez."}
+        </p>
       </div>
     );
   }
@@ -158,7 +175,7 @@ export default function WalletPortfolioWidget({ address }: Props) {
   const hasNfts = data.nfts.length > 0;
 
   if (!hasTokens && !hasNfts && data.nativeBalance === "0") {
-    return <EmptyPortfolio />;
+    return <EmptyPortfolio address={address} />;
   }
 
   return (
