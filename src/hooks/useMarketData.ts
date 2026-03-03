@@ -5,6 +5,7 @@ import { scanRisks } from '@/lib/riskScanner';
 import { scoreOpportunities } from '@/lib/opportunityScorer';
 import { alertStore } from '@/lib/alertStore';
 import { paperStore } from '@/lib/paperStore';
+import { useUserPreferences } from '@/lib/userPreferences';
 import type { Token, Signal, RiskReport, Alert, OpportunityScore, Chain, DEX } from '@/lib/types';
 
 function buildTokensFromAPIs(apiData: CombinedApiData): Token[] {
@@ -97,6 +98,7 @@ function buildTokensFromAPIs(apiData: CombinedApiData): Token[] {
 
 export function useMarketData() {
   const { data: apiData, isLoading, error } = useCMCPrices();
+  const { prefs } = useUserPreferences();
 
   const [signals, setSignals] = useState<Signal[]>([]);
   const [risks, setRisks] = useState<Map<string, RiskReport>>(new Map());
@@ -122,7 +124,7 @@ export function useMarketData() {
     if (tokens.length === 0) return;
 
     const sigs = evaluateSignals(tokens);
-    const riskMap = scanRisks(tokens);
+    const riskMap = scanRisks(tokens, prefs.riskProfile);
 
     const enrichedSignals = sigs.map(s => ({
       ...s,
@@ -195,7 +197,7 @@ export function useMarketData() {
         }
       }
     });
-  }, [tokens]);
+  }, [tokens, prefs.riskProfile]);
 
   useEffect(() => {
     const update = () => setAlerts([...alertStore.getAlerts()]);

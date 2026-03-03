@@ -11,6 +11,7 @@ import { PremiumProvider } from "@/hooks/usePremium";
 import "@/lib/web3modal";
 import Onboarding from "@/pages/Onboarding";
 import Radar from "@/pages/Radar";
+import Premium from "@/pages/Premium";
 import Opportunities from "@/pages/Opportunities";
 import AlertsPage from "@/pages/AlertsPage";
 import Profile from "@/pages/Profile";
@@ -62,6 +63,7 @@ function AppRoutes({ prefs, updatePrefs }: { prefs: ReturnType<typeof useUserPre
                   <Route path="/cases" element={<CasesListPage />} />
                   <Route path="/cases/:id" element={<CaseDetailPage />} />
                   <Route path="/profile" element={<Profile prefs={prefs} onUpdatePrefs={updatePrefs} />} />
+                  <Route path="/premium" element={<Premium />} />
                 </Route>
                 <Route path="/token/:id" element={<TokenDetail />} />
                 <Route path="*" element={<NotFound />} />

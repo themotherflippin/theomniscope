@@ -158,7 +158,7 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
             icon={premium.isPremium ? Crown : CreditCard}
             color="var(--warning)"
             title={lang === 'fr' ? 'Abonnement' : 'Plan'}
-            onClick={() => setShowUpgrade(true)}
+            onClick={() => navigate('/premium')}
             trailing={
               premium.isPremium ? (
                 <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[hsl(42_95%_50%/0.15)] text-[hsl(42,95%,50%)] border border-[hsl(42_95%_50%/0.2)]">

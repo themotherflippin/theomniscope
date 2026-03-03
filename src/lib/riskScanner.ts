@@ -1,6 +1,14 @@
 import type { Token, RiskReport, RiskFlag, RiskLevel, OwnerAction, DeployerReputation } from './types';
+import type { RiskProfile } from './userPreferences';
 
-function evaluateRisk(token: Token): RiskReport {
+// Risk profile multipliers: conservative sees more risk, aggressive sees less
+const RISK_MULTIPLIERS: Record<RiskProfile, number> = {
+  conservative: 1.4,
+  standard: 1.0,
+  aggressive: 0.65,
+};
+
+function evaluateRisk(token: Token, riskProfile: RiskProfile = 'standard'): RiskReport {
   const flags: RiskFlag[] = [];
 
   // ===== DATA-DRIVEN CHECKS ONLY (no random!) =====
@@ -179,11 +187,15 @@ function evaluateRisk(token: Token): RiskReport {
 
   // ===== SCORE CALCULATION =====
   const weights: Record<string, number> = { info: 2, warning: 8, danger: 18, critical: 30 };
+  const multiplier = RISK_MULTIPLIERS[riskProfile];
   const rawScore = flags.reduce((sum, f) => sum + (weights[f.severity] || 0), 0);
-  const score = Math.min(100, rawScore);
+  const score = Math.min(100, Math.round(rawScore * multiplier));
 
-  const level: RiskLevel = score >= 70 ? 'critical' : score >= 45 ? 'high' : score >= 25 ? 'medium' : 'low';
-  const badge = score >= 70 ? 'AVOID' : null;
+  // Adjust thresholds based on profile
+  const highThreshold = riskProfile === 'conservative' ? 55 : riskProfile === 'aggressive' ? 80 : 70;
+  const medThreshold = riskProfile === 'conservative' ? 30 : riskProfile === 'aggressive' ? 55 : 45;
+  const level: RiskLevel = score >= highThreshold ? 'critical' : score >= medThreshold ? 'high' : score >= 25 ? 'medium' : 'low';
+  const badge = score >= highThreshold ? 'AVOID' : null;
 
   return {
     tokenId: token.id,
@@ -206,10 +218,10 @@ function evaluateRisk(token: Token): RiskReport {
   };
 }
 
-export function scanRisks(tokens: Token[]): Map<string, RiskReport> {
+export function scanRisks(tokens: Token[], riskProfile: RiskProfile = 'standard'): Map<string, RiskReport> {
   const map = new Map<string, RiskReport>();
   for (const token of tokens) {
-    map.set(token.id, evaluateRisk(token));
+    map.set(token.id, evaluateRisk(token, riskProfile));
   }
   return map;
 }
