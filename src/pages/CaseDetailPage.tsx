@@ -14,7 +14,6 @@ import {
   Loader2,
   CheckCircle,
   Copy,
-  ExternalLink,
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,7 +37,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { shortenAddress } from "@/lib/formatters";
+import { useI18n } from "@/lib/i18n";
+import { MetricTooltip } from "@/components/DataProvenance";
+import { CaseVisualTimeline } from "@/components/case/CaseVisualTimeline";
 import {
   useCase,
   useUpdateCase,
@@ -82,6 +83,7 @@ const ITEM_TYPE_ICONS: Record<string, string> = {
 // ---------- Sub-components ----------
 
 function EvidenceTab({ caseId }: { caseId: string }) {
+  const { t } = useI18n();
   const { data: items, isLoading } = useCaseItems(caseId);
   const addItem = useAddCaseItem();
   const removeItem = useRemoveCaseItem();
@@ -112,16 +114,18 @@ function EvidenceTab({ caseId }: { caseId: string }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{(items ?? []).length} evidence items</span>
+        <span className="text-xs text-muted-foreground">
+          {(items ?? []).length} {t('case.evidenceItems')}
+        </span>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
             <Button size="sm" variant="outline" className="gap-1 text-xs">
-              <Plus className="w-3.5 h-3.5" /> Add Evidence
+              <Plus className="w-3.5 h-3.5" /> {t('case.addEvidence')}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle>Add Evidence</DialogTitle>
+              <DialogTitle>{t('case.addEvidence')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 mt-2">
               <Select value={newType} onValueChange={(v) => setNewType(v as CaseItemType)}>
@@ -129,12 +133,12 @@ function EvidenceTab({ caseId }: { caseId: string }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="wallet">Wallet Address</SelectItem>
-                  <SelectItem value="token">Token Contract</SelectItem>
-                  <SelectItem value="tx">Transaction Hash</SelectItem>
-                  <SelectItem value="cluster">Cluster ID</SelectItem>
-                  <SelectItem value="alert">Alert ID</SelectItem>
-                  <SelectItem value="snapshot">Snapshot Note</SelectItem>
+                  <SelectItem value="wallet">{t('case.walletAddress')}</SelectItem>
+                  <SelectItem value="token">{t('case.tokenContract')}</SelectItem>
+                  <SelectItem value="tx">{t('case.transactionHash')}</SelectItem>
+                  <SelectItem value="cluster">{t('case.clusterId')}</SelectItem>
+                  <SelectItem value="alert">{t('case.alertId')}</SelectItem>
+                  <SelectItem value="snapshot">{t('case.snapshotNote')}</SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -144,14 +148,14 @@ function EvidenceTab({ caseId }: { caseId: string }) {
                 className="text-xs font-mono"
               />
               <Input
-                placeholder="Label (optional)"
+                placeholder={t('case.labelOptional')}
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 className="text-xs"
               />
               <Button onClick={handleAdd} disabled={!newRef.trim() || addItem.isPending} className="w-full text-xs">
                 {addItem.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
-                Add to Case
+                {t('case.addToCase')}
               </Button>
               {addItem.isError && (
                 <p className="text-xs text-danger">{(addItem.error as Error)?.message}</p>
@@ -162,7 +166,7 @@ function EvidenceTab({ caseId }: { caseId: string }) {
       </div>
 
       {(items ?? []).length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-8">No evidence added yet</p>
+        <p className="text-xs text-muted-foreground text-center py-8">{t('case.noEvidence')}</p>
       ) : (
         <div className="space-y-1.5">
           {(items ?? []).map((item) => (
@@ -193,40 +197,11 @@ function EvidenceTab({ caseId }: { caseId: string }) {
 
 function TimelineTab({ caseId }: { caseId: string }) {
   const { data: timeline, isLoading } = useCaseTimeline(caseId);
-
-  if (isLoading) return <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>;
-
-  return (
-    <div className="space-y-1">
-      {(timeline ?? []).length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-8">No timeline events</p>
-      ) : (
-        <div className="relative pl-6 space-y-3">
-          <div className="absolute left-2 top-1 bottom-1 w-px bg-border" />
-          {(timeline ?? []).map((entry, i) => (
-            <div key={i} className="relative">
-              <div className="absolute -left-[18px] top-1.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" />
-              <div className="gradient-card rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <Badge variant="outline" className="text-[8px] px-1">{entry.type}</Badge>
-                  <span className="text-[10px] text-muted-foreground">
-                    {new Date(entry.time).toLocaleString()}
-                  </span>
-                </div>
-                <p className="text-xs font-medium">{entry.title}</p>
-                {entry.details && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{entry.details}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  return <CaseVisualTimeline timeline={timeline ?? []} isLoading={isLoading} />;
 }
 
 function NotesTab({ caseId }: { caseId: string }) {
+  const { t } = useI18n();
   const { data: notes, isLoading } = useCaseNotes(caseId);
   const addNote = useAddCaseNote();
   const deleteNote = useDeleteCaseNote();
@@ -244,7 +219,7 @@ function NotesTab({ caseId }: { caseId: string }) {
     <div className="space-y-3">
       <div className="flex gap-2">
         <Textarea
-          placeholder="Add a note..."
+          placeholder={t('case.addNote')}
           value={newNote}
           onChange={(e) => setNewNote(e.target.value)}
           rows={2}
@@ -262,7 +237,7 @@ function NotesTab({ caseId }: { caseId: string }) {
       </div>
 
       {(notes ?? []).length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-6">No notes yet</p>
+        <p className="text-xs text-muted-foreground text-center py-6">{t('case.noNotes')}</p>
       ) : (
         <div className="space-y-2">
           {(notes ?? []).map((note) => (
@@ -290,6 +265,7 @@ function NotesTab({ caseId }: { caseId: string }) {
 }
 
 function ReportsTab({ caseId }: { caseId: string }) {
+  const { t } = useI18n();
   const { data: jobs, isLoading } = useReportJobs(caseId);
   const generate = useGenerateReport();
   const enableShare = useEnableShare();
@@ -300,9 +276,9 @@ function ReportsTab({ caseId }: { caseId: string }) {
   const handleGenerate = async () => {
     try {
       await generate.mutateAsync(caseId);
-      toast({ title: "Report generated", description: "Your report is ready for download." });
+      toast({ title: t('case.reportGenerated'), description: t('case.reportReady') });
     } catch (err) {
-      toast({ title: "Report failed", description: (err as Error).message, variant: "destructive" });
+      toast({ title: t('case.reportFailed'), description: (err as Error).message, variant: "destructive" });
     }
   };
 
@@ -312,7 +288,7 @@ function ReportsTab({ caseId }: { caseId: string }) {
       const url = `${window.location.origin}/shared-case/${link.public_token}`;
       setShareLink(url);
       navigator.clipboard.writeText(url);
-      toast({ title: "Link copied", description: "Share link is now active." });
+      toast({ title: t('case.linkCopied'), description: t('case.linkActive') });
     } catch {
       toast({ title: "Failed to create share link", variant: "destructive" });
     }
@@ -331,7 +307,7 @@ function ReportsTab({ caseId }: { caseId: string }) {
           className="gap-1.5 text-xs"
         >
           {generate.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
-          Generate Report
+          {t('case.generateReport')}
         </Button>
         <Button
           size="sm"
@@ -340,7 +316,7 @@ function ReportsTab({ caseId }: { caseId: string }) {
           disabled={enableShare.isPending}
           className="gap-1.5 text-xs"
         >
-          <Share2 className="w-3.5 h-3.5" /> Share Link
+          <Share2 className="w-3.5 h-3.5" /> {t('case.shareLink')}
         </Button>
       </div>
 
@@ -364,7 +340,7 @@ function ReportsTab({ caseId }: { caseId: string }) {
 
       {/* Jobs list */}
       {(jobs ?? []).length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-6">No reports generated yet</p>
+        <p className="text-xs text-muted-foreground text-center py-6">{t('case.noReports')}</p>
       ) : (
         <div className="space-y-2">
           {(jobs ?? []).map((job) => (
@@ -418,6 +394,7 @@ function ReportsTab({ caseId }: { caseId: string }) {
 export default function CaseDetailPage() {
   const { id: caseId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { data: caseData, isLoading } = useCase(caseId ?? "");
   const updateCase = useUpdateCase();
 
@@ -437,7 +414,7 @@ export default function CaseDetailPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 pt-6 text-center">
         <AlertTriangle className="w-8 h-8 text-danger mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">Case not found</p>
+        <p className="text-sm text-muted-foreground">{t('case.notFound')}</p>
       </div>
     );
   }
@@ -456,33 +433,37 @@ export default function CaseDetailPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Select
-            value={caseData.status}
-            onValueChange={(v) => updateCase.mutate({ case_id: caseId, status: v as CaseStatus })}
-          >
-            <SelectTrigger className="w-24 h-7 text-[10px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="triaged">Triaged</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={caseData.priority}
-            onValueChange={(v) => updateCase.mutate({ case_id: caseId, priority: v as CasePriority })}
-          >
-            <SelectTrigger className="w-24 h-7 text-[10px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
-            </SelectContent>
-          </Select>
+          <MetricTooltip labelKey="caseStatus">
+            <Select
+              value={caseData.status}
+              onValueChange={(v) => updateCase.mutate({ case_id: caseId, status: v as CaseStatus })}
+            >
+              <SelectTrigger className="w-24 h-7 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">{t('case.open')}</SelectItem>
+                <SelectItem value="triaged">{t('case.triaged')}</SelectItem>
+                <SelectItem value="closed">{t('case.closed')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </MetricTooltip>
+          <MetricTooltip labelKey="casePriority">
+            <Select
+              value={caseData.priority}
+              onValueChange={(v) => updateCase.mutate({ case_id: caseId, priority: v as CasePriority })}
+            >
+              <SelectTrigger className="w-24 h-7 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">{t('case.low')}</SelectItem>
+                <SelectItem value="medium">{t('case.medium')}</SelectItem>
+                <SelectItem value="high">{t('case.high')}</SelectItem>
+                <SelectItem value="critical">{t('case.critical')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </MetricTooltip>
           <Badge variant="outline" className="text-[9px]">{caseData.chain}</Badge>
         </div>
         {caseData.description && (
@@ -495,16 +476,16 @@ export default function CaseDetailPage() {
         <Tabs defaultValue="evidence" className="space-y-4">
           <TabsList className="w-full grid grid-cols-4 h-9">
             <TabsTrigger value="evidence" className="text-xs gap-1">
-              <FileText className="w-3.5 h-3.5" /> Evidence
+              <FileText className="w-3.5 h-3.5" /> {t('case.evidence')}
             </TabsTrigger>
             <TabsTrigger value="timeline" className="text-xs gap-1">
-              <Clock className="w-3.5 h-3.5" /> Timeline
+              <Clock className="w-3.5 h-3.5" /> {t('case.timeline')}
             </TabsTrigger>
             <TabsTrigger value="notes" className="text-xs gap-1">
-              <MessageSquare className="w-3.5 h-3.5" /> Notes
+              <MessageSquare className="w-3.5 h-3.5" /> {t('case.notes')}
             </TabsTrigger>
             <TabsTrigger value="reports" className="text-xs gap-1">
-              <Download className="w-3.5 h-3.5" /> Reports
+              <Download className="w-3.5 h-3.5" /> {t('case.reports')}
             </TabsTrigger>
           </TabsList>
 

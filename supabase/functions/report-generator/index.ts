@@ -31,23 +31,33 @@ function buildTextReport(report: ReportData): string {
   const c = report.caseData;
   const lines: string[] = [];
 
-  lines.push("═".repeat(60));
-  lines.push("ORACLE INTEL — INVESTIGATION REPORT");
-  lines.push("═".repeat(60));
+  lines.push("╔" + "═".repeat(58) + "╗");
+  lines.push("║" + " ".repeat(12) + "ORACLE INTEL — INVESTIGATION REPORT" + " ".repeat(11) + "║");
+  lines.push("╚" + "═".repeat(58) + "╝");
   lines.push("");
-  lines.push(`Case: ${c.title}`);
-  lines.push(`ID: ${c.id}`);
-  lines.push(`Status: ${String(c.status).toUpperCase()} | Priority: ${String(c.priority).toUpperCase()}`);
-  lines.push(`Chain: ${c.chain}`);
-  lines.push(`Created: ${c.created_at}`);
-  if (c.description) lines.push(`Description: ${c.description}`);
-  if (Array.isArray(c.tags) && c.tags.length > 0) lines.push(`Tags: ${c.tags.join(", ")}`);
+  lines.push(`Report Generated: ${new Date().toISOString()}`);
+  lines.push(`Platform: Oracle Intel — On-chain Intelligence`);
   lines.push("");
 
-  // Executive summary
-  lines.push("─".repeat(40));
-  lines.push("EXECUTIVE SUMMARY");
-  lines.push("─".repeat(40));
+  // ── Case Overview ──
+  lines.push("┌" + "─".repeat(58) + "┐");
+  lines.push("│  CASE OVERVIEW" + " ".repeat(43) + "│");
+  lines.push("└" + "─".repeat(58) + "┘");
+  lines.push(`  Title:       ${c.title}`);
+  lines.push(`  Case ID:     ${c.id}`);
+  lines.push(`  Status:      ${String(c.status).toUpperCase()}`);
+  lines.push(`  Priority:    ${String(c.priority).toUpperCase()}`);
+  lines.push(`  Chain:       ${c.chain}`);
+  lines.push(`  Created:     ${new Date(String(c.created_at)).toLocaleString()}`);
+  lines.push(`  Last Update: ${new Date(String(c.updated_at)).toLocaleString()}`);
+  if (c.description) lines.push(`  Description: ${c.description}`);
+  if (Array.isArray(c.tags) && c.tags.length > 0) lines.push(`  Tags:        ${c.tags.join(", ")}`);
+  lines.push("");
+
+  // ── Executive Summary ──
+  lines.push("┌" + "─".repeat(58) + "┐");
+  lines.push("│  EXECUTIVE SUMMARY" + " ".repeat(39) + "│");
+  lines.push("└" + "─".repeat(58) + "┘");
 
   const wallets = report.items.filter(i => i.item_type === "wallet");
   const tokens = report.items.filter(i => i.item_type === "token");
@@ -55,133 +65,166 @@ function buildTextReport(report: ReportData): string {
   const alerts = report.items.filter(i => i.item_type === "alert");
   const clusters = report.items.filter(i => i.item_type === "cluster");
 
-  lines.push(`This case involves ${report.items.length} evidence items:`);
-  if (wallets.length) lines.push(`  • ${wallets.length} wallet address(es)`);
-  if (tokens.length) lines.push(`  • ${tokens.length} token contract(s)`);
-  if (txs.length) lines.push(`  • ${txs.length} transaction(s)`);
-  if (alerts.length) lines.push(`  • ${alerts.length} alert(s)`);
-  if (clusters.length) lines.push(`  • ${clusters.length} cluster analysis(es)`);
+  lines.push(`  Total evidence items: ${report.items.length}`);
+  lines.push(`  Investigator notes:   ${report.notes.length}`);
+  lines.push(`  Timeline events:      ${report.timeline.length}`);
+  lines.push("");
+  if (wallets.length) lines.push(`  ▸ ${wallets.length} wallet address(es)`);
+  if (tokens.length) lines.push(`  ▸ ${tokens.length} token contract(s)`);
+  if (txs.length) lines.push(`  ▸ ${txs.length} transaction(s)`);
+  if (alerts.length) lines.push(`  ▸ ${alerts.length} alert(s)`);
+  if (clusters.length) lines.push(`  ▸ ${clusters.length} cluster analysis(es)`);
   lines.push("");
 
-  // Evidence detail sections
-  if (wallets.length) {
-    lines.push("─".repeat(40));
-    lines.push("WALLET EVIDENCE");
-    lines.push("─".repeat(40));
-    for (const w of wallets) {
-      lines.push(`  Address: ${w.ref}`);
-      if (w.title) lines.push(`  Label: ${w.title}`);
-      const data = (w.data ?? {}) as Record<string, unknown>;
-      if (data.riskFlags) lines.push(`  Risk Flags: ${JSON.stringify(data.riskFlags)}`);
+  // ── Risk Assessment ──
+  const hasRiskData = report.items.some(i => {
+    const data = (i.data ?? {}) as Record<string, unknown>;
+    return data.riskFlags || data.riskScore || data.top10Pct;
+  });
+
+  if (hasRiskData) {
+    lines.push("┌" + "─".repeat(58) + "┐");
+    lines.push("│  RISK ASSESSMENT" + " ".repeat(41) + "│");
+    lines.push("└" + "─".repeat(58) + "┘");
+    for (const item of report.items) {
+      const data = (item.data ?? {}) as Record<string, unknown>;
+      if (data.riskScore !== undefined || data.riskFlags) {
+        lines.push(`  ${item.item_type.toUpperCase()}: ${item.ref}`);
+        if (data.riskScore !== undefined) lines.push(`    Risk Score: ${data.riskScore}/100`);
+        if (Array.isArray(data.riskFlags)) {
+          for (const flag of data.riskFlags as Array<{ label: string; severity: string }>) {
+            lines.push(`    ⚠ [${flag.severity?.toUpperCase() ?? "MEDIUM"}] ${flag.label}`);
+          }
+        }
+        lines.push("");
+      }
+    }
+  }
+
+  // ── Evidence Details ──
+  const sections: { title: string; items: Array<Record<string, unknown>>; prefix: string }[] = [
+    { title: "WALLET EVIDENCE", items: wallets, prefix: "Address" },
+    { title: "TOKEN EVIDENCE", items: tokens, prefix: "Contract" },
+    { title: "TRANSACTION EVIDENCE", items: txs, prefix: "Hash" },
+    { title: "ALERT EVIDENCE", items: alerts, prefix: "Alert" },
+    { title: "CLUSTER ANALYSIS", items: clusters, prefix: "Cluster ID" },
+  ];
+
+  for (const section of sections) {
+    if (section.items.length === 0) continue;
+
+    lines.push("┌" + "─".repeat(58) + "┐");
+    lines.push(`│  ${section.title}` + " ".repeat(Math.max(0, 57 - section.title.length)) + "│");
+    lines.push("└" + "─".repeat(58) + "┘");
+
+    for (const item of section.items) {
+      lines.push(`  ${section.prefix}: ${item.ref}`);
+      if (item.title) lines.push(`  Label:   ${item.title}`);
+
+      const data = (item.data ?? {}) as Record<string, unknown>;
+      const dataKeys = Object.keys(data).filter(k => data[k] !== null && data[k] !== undefined);
+      for (const key of dataKeys) {
+        const val = data[key];
+        const formatted = typeof val === "object" ? JSON.stringify(val) : String(val);
+        lines.push(`  ${key}: ${formatted}`);
+      }
       lines.push("");
     }
   }
 
-  if (tokens.length) {
-    lines.push("─".repeat(40));
-    lines.push("TOKEN EVIDENCE");
-    lines.push("─".repeat(40));
-    for (const t of tokens) {
-      lines.push(`  Contract: ${t.ref}`);
-      if (t.title) lines.push(`  Name: ${t.title}`);
-      const data = (t.data ?? {}) as Record<string, unknown>;
-      if (data.symbol) lines.push(`  Symbol: ${data.symbol}`);
-      if (data.top10Pct !== undefined) lines.push(`  Top 10 Holder %: ${data.top10Pct}`);
-      if (data.giniApprox !== undefined) lines.push(`  Gini Index: ${data.giniApprox}`);
-      lines.push("");
-    }
-  }
-
-  if (txs.length) {
-    lines.push("─".repeat(40));
-    lines.push("TRANSACTION EVIDENCE");
-    lines.push("─".repeat(40));
-    for (const tx of txs) {
-      lines.push(`  Hash: ${tx.ref}`);
-      if (tx.title) lines.push(`  Note: ${tx.title}`);
-      const data = (tx.data ?? {}) as Record<string, unknown>;
-      if (data.value) lines.push(`  Value: ${data.value}`);
-      if (data.from) lines.push(`  From: ${data.from}`);
-      if (data.to) lines.push(`  To: ${data.to}`);
-      lines.push("");
-    }
-  }
-
-  if (alerts.length) {
-    lines.push("─".repeat(40));
-    lines.push("ALERT EVIDENCE");
-    lines.push("─".repeat(40));
-    for (const a of alerts) {
-      if (a.title) lines.push(`  Alert: ${a.title}`);
-      const data = (a.data ?? {}) as Record<string, unknown>;
-      if (data.severity) lines.push(`  Severity: ${data.severity}`);
-      if (data.description) lines.push(`  Detail: ${data.description}`);
-      lines.push("");
-    }
-  }
-
-  if (clusters.length) {
-    lines.push("─".repeat(40));
-    lines.push("CLUSTER ANALYSIS");
-    lines.push("─".repeat(40));
-    for (const cl of clusters) {
-      lines.push(`  Cluster ID: ${cl.ref}`);
-      const data = (cl.data ?? {}) as Record<string, unknown>;
-      if (data.confidence !== undefined) lines.push(`  Confidence: ${Math.round(Number(data.confidence) * 100)}%`);
-      if (data.memberCount) lines.push(`  Members: ${data.memberCount}`);
-      if (Array.isArray(data.topSignals)) lines.push(`  Top Signals: ${(data.topSignals as string[]).join(", ")}`);
-      lines.push("");
-    }
-  }
-
-  // Notes
+  // ── Investigator Notes ──
   if (report.notes.length) {
-    lines.push("─".repeat(40));
-    lines.push("INVESTIGATOR NOTES");
-    lines.push("─".repeat(40));
+    lines.push("┌" + "─".repeat(58) + "┐");
+    lines.push("│  INVESTIGATOR NOTES" + " ".repeat(38) + "│");
+    lines.push("└" + "─".repeat(58) + "┘");
     for (const n of report.notes) {
-      lines.push(`  [${n.created_at}]`);
-      lines.push(`  ${n.body}`);
+      const date = new Date(String(n.created_at)).toLocaleString();
+      lines.push(`  ┌ ${date}`);
+      const body = String(n.body);
+      // Wrap long notes
+      const noteLines = body.split("\n");
+      for (const nl of noteLines) {
+        lines.push(`  │ ${nl}`);
+      }
+      lines.push(`  └${"─".repeat(40)}`);
       lines.push("");
     }
   }
 
-  // Timeline
+  // ── Timeline ──
   if (report.timeline.length) {
-    lines.push("─".repeat(40));
-    lines.push("TIMELINE");
-    lines.push("─".repeat(40));
+    lines.push("┌" + "─".repeat(58) + "┐");
+    lines.push("│  TIMELINE" + " ".repeat(48) + "│");
+    lines.push("└" + "─".repeat(58) + "┘");
     for (const t of report.timeline) {
-      lines.push(`  ${t.time} | ${t.type} | ${t.title}`);
-      if (t.details) lines.push(`    ${t.details}`);
+      const date = new Date(String(t.time)).toLocaleString();
+      const type = String(t.type).toUpperCase().padEnd(12);
+      lines.push(`  ${date}  │ ${type} │ ${t.title}`);
+      if (t.details) lines.push(`  ${" ".repeat(22)}│ ${" ".repeat(13)}│ ${t.details}`);
     }
     lines.push("");
   }
 
-  // Disclaimer
-  lines.push("═".repeat(60));
-  lines.push("DISCLAIMER");
-  lines.push("═".repeat(60));
-  lines.push("This report contains on-chain intelligence signals and");
-  lines.push("probabilistic risk indicators. All findings are based on");
-  lines.push("publicly available blockchain data. Risk flags represent");
-  lines.push("statistical patterns, not definitive conclusions.");
+  // ── Methodology ──
+  lines.push("┌" + "─".repeat(58) + "┐");
+  lines.push("│  METHODOLOGY & DATA SOURCES" + " ".repeat(30) + "│");
+  lines.push("└" + "─".repeat(58) + "┘");
+  lines.push("  Data Sources:");
+  lines.push("    • On-chain transaction data (EVM-compatible chains)");
+  lines.push("    • CoinMarketCap (market data, pricing)");
+  lines.push("    • DexScreener (DEX trading data)");
+  lines.push("    • Moralis (wallet activity, token transfers)");
+  lines.push("  Analysis Methods:");
+  lines.push("    • Cluster detection via shared funding patterns");
+  lines.push("    • Risk scoring: liquidity, concentration, patterns");
+  lines.push("    • Smart money tracking via historical PnL heuristics");
+  lines.push("");
+
+  // ── Disclaimer ──
+  lines.push("╔" + "═".repeat(58) + "╗");
+  lines.push("║  DISCLAIMER" + " ".repeat(46) + "║");
+  lines.push("╠" + "═".repeat(58) + "╣");
+  lines.push("║  This report contains on-chain intelligence signals    ║");
+  lines.push("║  and probabilistic risk indicators. All findings are   ║");
+  lines.push("║  based on publicly available blockchain data.          ║");
+  lines.push("║                                                        ║");
+  lines.push("║  Risk flags represent statistical patterns, NOT        ║");
+  lines.push("║  definitive conclusions about illicit activity.        ║");
+  lines.push("║                                                        ║");
+  lines.push("║  This is NOT financial or legal advice.                ║");
+  lines.push("╚" + "═".repeat(58) + "╝");
+  lines.push("");
   lines.push(`Generated: ${new Date().toISOString()}`);
-  lines.push(`Oracle Intel Platform — ${c.chain}`);
+  lines.push(`Oracle Intel Platform — Chain: ${c.chain}`);
+  lines.push(`Case ID: ${c.id}`);
 
   return lines.join("\n");
 }
 
 function buildJsonExport(report: ReportData): Record<string, unknown> {
+  const wallets = report.items.filter(i => i.item_type === "wallet");
+  const tokens = report.items.filter(i => i.item_type === "token");
+  const txs = report.items.filter(i => i.item_type === "tx");
+
   return {
-    version: "1.0",
+    version: "2.0",
     generated_at: new Date().toISOString(),
     platform: "Oracle Intel",
     case: report.caseData,
+    summary: {
+      total_evidence: report.items.length,
+      total_notes: report.notes.length,
+      wallets_count: wallets.length,
+      tokens_count: tokens.length,
+      transactions_count: txs.length,
+      priority: report.caseData.priority,
+      status: report.caseData.status,
+    },
     evidence: report.items,
     notes: report.notes,
     timeline: report.timeline,
-    disclaimer: "This report contains on-chain intelligence signals and probabilistic risk indicators based on publicly available blockchain data.",
+    data_sources: ["on-chain", "CoinMarketCap", "DexScreener", "Moralis"],
+    disclaimer: "This report contains on-chain intelligence signals and probabilistic risk indicators based on publicly available blockchain data. This is not financial or legal advice.",
   };
 }
 
