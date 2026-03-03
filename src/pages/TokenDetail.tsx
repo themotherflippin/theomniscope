@@ -4,7 +4,6 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { MiniChart } from '@/components/MiniChart';
 import { SignalCard } from '@/components/SignalCard';
 import { RiskPanel } from '@/components/RiskPanel';
-import { SmartMoneyPanel } from '@/components/SmartMoneyPanel';
 import { Disclaimer } from '@/components/Disclaimer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ import {
 export default function TokenDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tokens, signals, risks, smartMoneySignals, getWhosBuying, oppScores } = useMarketData();
+  const { tokens, signals, risks, oppScores } = useMarketData();
   const { t } = useI18n();
 
   const token = tokens.find(tk => tk.id === id);
@@ -40,7 +39,7 @@ export default function TokenDetail() {
   const risk = risks.get(token.id);
   const tokenSignals = signals.filter(s => s.tokenId === token.id);
   const positive = token.priceChange24h >= 0;
-  const whosBuying = getWhosBuying(token.id);
+  // Smart money panel removed — was using mock data
   const oppScore = oppScores.find(o => o.tokenId === token.id);
   const slippage1k = estimateSlippage(token.liquidity, 1000);
   const slippage5k = estimateSlippage(token.liquidity, 5000);
@@ -167,13 +166,6 @@ export default function TokenDetail() {
           </motion.div>
         )}
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <SmartMoneyPanel
-            whosBuying={whosBuying}
-            signals={smartMoneySignals}
-            tokenId={token.id}
-          />
-        </motion.div>
 
         {tokenSignals.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="space-y-3">

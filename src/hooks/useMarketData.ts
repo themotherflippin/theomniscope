@@ -1,12 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useCMCPrices, TRACKED_TOKENS, type CombinedApiData, type CMCTokenData, type DexTokenData } from '@/hooks/useCMCPrices';
 import { evaluateSignals } from '@/lib/signalEngine';
 import { scanRisks } from '@/lib/riskScanner';
 import { scoreOpportunities } from '@/lib/opportunityScorer';
-import { generateWalletActivities, generateSmartMoneySignals, getWhosBuying } from '@/lib/smartMoney';
 import { alertStore } from '@/lib/alertStore';
 import { paperStore } from '@/lib/paperStore';
-import type { Token, Signal, RiskReport, Alert, OpportunityScore, WalletActivity, SmartMoneySignal, Chain, DEX } from '@/lib/types';
+import type { Token, Signal, RiskReport, Alert, OpportunityScore, Chain, DEX } from '@/lib/types';
 
 function buildTokensFromAPIs(apiData: CombinedApiData): Token[] {
   const { cmc, dex } = apiData;
@@ -103,8 +102,8 @@ export function useMarketData() {
   const [risks, setRisks] = useState<Map<string, RiskReport>>(new Map());
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [oppScores, setOppScores] = useState<OpportunityScore[]>([]);
-  const [walletActivities, setWalletActivities] = useState<WalletActivity[]>([]);
-  const [smartMoneySignals, setSmartMoneySignals] = useState<SmartMoneySignal[]>([]);
+  // Track which alert keys we've already emitted to prevent duplicates
+  const emittedAlertKeys = useRef(new Set<string>());
 
   const tokens = useMemo(() => {
     if (!apiData) return [];
@@ -112,6 +111,13 @@ export function useMarketData() {
   }, [apiData]);
 
   // Compute signals, risks, etc when tokens change
+  // Helper to emit an alert only once per unique key
+  const emitAlert = (key: string, alert: Omit<Alert, 'id' | 'timestamp' | 'read'>) => {
+    if (emittedAlertKeys.current.has(key)) return;
+    emittedAlertKeys.current.add(key);
+    alertStore.addAlert(alert);
+  };
+
   useEffect(() => {
     if (tokens.length === 0) return;
 
@@ -129,14 +135,11 @@ export function useMarketData() {
     const scores = scoreOpportunities(tokens, riskMap);
     setOppScores(scores);
 
-    const activities = generateWalletActivities(tokens);
-    setWalletActivities(activities);
-    const smSignals = generateSmartMoneySignals(tokens, activities);
-    setSmartMoneySignals(smSignals);
-
-    // Generate alerts
+    // Generate alerts from REAL data only (no mock smart money)
+    // Signal alerts — based on real price/volume from CMC/DexScreener
     enrichedSignals.slice(0, 3).forEach(sig => {
-      alertStore.addAlert({
+      const key = `signal:${sig.tokenSymbol}:${sig.strategy}:${sig.type}`;
+      emitAlert(key, {
         tokenId: sig.tokenId,
         tokenSymbol: sig.tokenSymbol,
         type: 'signal',
@@ -145,26 +148,51 @@ export function useMarketData() {
       });
     });
 
-    smSignals.filter(s => s.confidence === 'high').slice(0, 2).forEach(s => {
-      alertStore.addAlert({
-        tokenId: s.tokenId,
-        tokenSymbol: s.tokenSymbol,
-        type: 'smart_money',
-        priority: 'high',
-        message: `Smart money ${s.type}: ${s.detail}`,
-      });
-    });
-
+    // Risk alerts — based on real price/volume/liquidity analysis
     tokens.forEach(t => {
       const r = riskMap.get(t.id);
       if (r && r.score >= 70) {
-        alertStore.addAlert({
+        const key = `risk:${t.symbol}:${r.score}`;
+        emitAlert(key, {
           tokenId: t.id,
           tokenSymbol: t.symbol,
           type: 'risk',
           priority: 'critical',
           message: `⚠ ${t.symbol} risk score ${r.score}/100 — ${r.flags.find(f => f.severity === 'critical')?.label || 'Critical risk'}`,
         });
+      }
+    });
+
+    // Price movement alerts — significant real moves
+    tokens.forEach(t => {
+      if (Math.abs(t.priceChange1h) >= 10) {
+        const direction = t.priceChange1h > 0 ? '📈' : '📉';
+        const key = `price:${t.symbol}:${Math.round(t.priceChange1h)}`;
+        emitAlert(key, {
+          tokenId: t.id,
+          tokenSymbol: t.symbol,
+          type: 'price',
+          priority: Math.abs(t.priceChange1h) >= 20 ? 'critical' : 'high',
+          message: `${direction} ${t.symbol} ${t.priceChange1h > 0 ? '+' : ''}${t.priceChange1h.toFixed(1)}% in 1h — $${t.price.toFixed(6)}`,
+        });
+      }
+    });
+
+    // Volume spike alerts — real volume anomalies
+    tokens.forEach(t => {
+      if (t.volume1h > 0 && t.volume24h > 0) {
+        const avgHourlyVol = t.volume24h / 24;
+        if (avgHourlyVol > 0 && t.volume1h > avgHourlyVol * 5) {
+          const multiplier = (t.volume1h / avgHourlyVol).toFixed(1);
+          const key = `volume:${t.symbol}:${multiplier}`;
+          emitAlert(key, {
+            tokenId: t.id,
+            tokenSymbol: t.symbol,
+            type: 'volume',
+            priority: 'high',
+            message: `🔊 ${t.symbol} volume spike: ${multiplier}x average hourly volume`,
+          });
+        }
       }
     });
   }, [tokens]);
@@ -212,16 +240,22 @@ export function useMarketData() {
       : 0;
     const sentiment = avgChange > 5 ? 'bullish' as const : avgChange < -5 ? 'bearish' as const : 'neutral' as const;
 
+    // Derive smart money trend from real buy/sell pressure
+    const buyDominant = tokens.filter(t => t.buyCount > t.sellCount * 1.3).length;
+    const sellDominant = tokens.filter(t => t.sellCount > t.buyCount * 1.3).length;
+
     return {
       topOpportunities: topOpps,
       topDangers,
       marketSentiment: sentiment,
-      smartMoneyTrend: smartMoneySignals.filter(s => s.type === 'accumulation').length > smartMoneySignals.filter(s => s.type === 'distribution').length
-        ? 'Smart money accumulating'
-        : 'Smart money cautious',
+      smartMoneyTrend: buyDominant > sellDominant
+        ? 'Buy pressure dominant'
+        : sellDominant > buyDominant
+        ? 'Sell pressure dominant'
+        : 'Market balanced',
       timestamp: Date.now(),
     };
-  }, [oppScores, highRiskTokens, tokens, smartMoneySignals]);
+  }, [oppScores, highRiskTokens, tokens]);
 
   return {
     tokens,
@@ -231,13 +265,10 @@ export function useMarketData() {
     opportunities,
     highRiskTokens,
     oppScores,
-    walletActivities,
-    smartMoneySignals,
     dailyBrief,
     unreadAlerts: alertStore.unreadCount(),
     markAlertRead: alertStore.markRead,
     markAllRead: alertStore.markAllRead,
-    getWhosBuying: (tokenId: string) => getWhosBuying(tokenId, walletActivities),
     isLoading,
     error,
   };
