@@ -1,18 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import oracleLogo from "@/assets/oracle-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Mail, Lock, Plus, Copy, Check, Trash2, ArrowLeft,
-  Activity, Clock, Shield, FileText,
+  Mail, Lock, Plus, Copy, Check, Trash2,
+  Activity, Shield,
   Loader2, RefreshCw, Zap, Database, Server,
-  Wifi, WifiOff, CreditCard, BarChart3,
+  CreditCard, BarChart3, ChevronLeft, ChevronRight, Clock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -24,6 +30,7 @@ function generateCode(): string {
 const spring = { type: "spring" as const, stiffness: 500, damping: 30 };
 
 type ServiceStatus = "healthy" | "error" | "not_configured" | "loading";
+type CodeDuration = "1week" | "1month" | "3months" | "1year" | "lifetime";
 
 interface HealthData {
   database: { status: string; latencyMs: number; stats: Record<string, number | string | null> };
@@ -33,6 +40,14 @@ interface HealthData {
   edgeFunctions: { status: string };
   storage: { status: string; buckets?: string[] };
 }
+
+const DURATION_DAYS: Record<CodeDuration, number | null> = {
+  "1week": 7,
+  "1month": 30,
+  "3months": 90,
+  "1year": 365,
+  "lifetime": null,
+};
 
 function StatusDot({ status }: { status: ServiceStatus }) {
   const colors: Record<ServiceStatus, string> = {
@@ -44,14 +59,15 @@ function StatusDot({ status }: { status: ServiceStatus }) {
   return <span className={`inline-block w-1.5 h-1.5 rounded-full ${colors[status]}`} />;
 }
 
-function MetricCard({ icon: Icon, label, value, color, status = "healthy" as ServiceStatus, suffix }: {
-  icon: React.ElementType; label: string; value: string; color: string; status?: ServiceStatus; suffix?: string;
+function MetricCard({ icon: Icon, label, value, color, status = "healthy" as ServiceStatus, suffix, onClick }: {
+  icon: React.ElementType; label: string; value: string; color: string; status?: ServiceStatus; suffix?: string; onClick?: () => void;
 }) {
   return (
-    <motion.div
+    <motion.button
       whileTap={{ scale: 0.97 }}
       transition={spring}
-      className="rounded-xl p-2.5 border border-border/30"
+      onClick={onClick}
+      className="rounded-xl p-2.5 border border-border/30 text-left w-full"
       style={{ background: `hsl(${color} / 0.08)` }}
     >
       <div className="flex items-center gap-1.5 mb-1">
@@ -63,7 +79,7 @@ function MetricCard({ icon: Icon, label, value, color, status = "healthy" as Ser
         {suffix && <span className="text-[9px] text-muted-foreground">{suffix}</span>}
         <StatusDot status={status} />
       </div>
-    </motion.div>
+    </motion.button>
   );
 }
 
@@ -96,6 +112,28 @@ function formatTimeAgo(dateStr: string | null): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+function getCodeStatus(code: any): "available" | "used" | "expired" {
+  if (!code.is_used) {
+    if (code.expires_at && new Date(code.expires_at) < new Date()) return "expired";
+    return "available";
+  }
+  if (code.expires_at && new Date(code.expires_at) < new Date()) return "expired";
+  return "used";
+}
+
+function getDurationLabel(duration: string, t: (key: any) => string): string {
+  const map: Record<string, string> = {
+    "1week": t("admin.1week"),
+    "1month": t("admin.1month"),
+    "3months": t("admin.3months"),
+    "1year": t("admin.1year"),
+    "lifetime": t("admin.lifetime"),
+  };
+  return map[duration] ?? duration;
+}
+
+const CODES_PER_PAGE = 8;
+
 export default function Admin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -107,6 +145,8 @@ export default function Admin() {
   const [scannerRunning, setScannerRunning] = useState(false);
   const [health, setHealth] = useState<HealthData | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
+  const [selectedDuration, setSelectedDuration] = useState<CodeDuration>("lifetime");
+  const [codePage, setCodePage] = useState(0);
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -156,7 +196,15 @@ export default function Admin() {
 
   const createCode = async () => {
     setGenLoading(true);
-    await supabase.from("invitation_codes").insert({ code: generateCode() });
+    const days = DURATION_DAYS[selectedDuration];
+    const expiresAt = days
+      ? new Date(Date.now() + days * 86400000).toISOString()
+      : null;
+    await supabase.from("invitation_codes").insert({
+      code: generateCode(),
+      duration: selectedDuration,
+      expires_at: expiresAt,
+    } as any);
     await fetchCodes();
     setGenLoading(false);
   };
@@ -176,7 +224,7 @@ export default function Admin() {
     setScannerRunning(true);
     try { await supabase.functions.invoke("alert-scanner", { body: {} }); } catch {}
     setScannerRunning(false);
-    fetchHealth(); // Refresh stats after scan
+    fetchHealth();
   };
 
   // --- Login ---
@@ -189,7 +237,7 @@ export default function Admin() {
           transition={spring}
           className="w-full max-w-xs space-y-5 text-center"
         >
-          <img src={oracleLogo} alt="Oracle" className="w-16 h-16 mx-auto object-contain" />
+          <Shield className="w-12 h-12 mx-auto text-primary" />
           <h1 className="text-lg font-display font-bold">{t("admin.title")}</h1>
           <div className="space-y-2.5">
             <div className="relative">
@@ -210,7 +258,7 @@ export default function Admin() {
     );
   }
 
-  // --- Derived values from real health data ---
+  // --- Derived values ---
   const dbStatus = (health?.database?.status ?? "loading") as ServiceStatus;
   const dbLatency = health?.database?.latencyMs;
   const moralisStatus = (health?.moralis?.status ?? "loading") as ServiceStatus;
@@ -222,12 +270,15 @@ export default function Admin() {
   const stats = health?.database?.stats;
   const totalAlerts = stats?.alerts ?? "–";
   const activeRules = stats?.activeRules ?? "–";
-  const activeWatchlists = stats?.activeWatchlists ?? "–";
   const walletScans = stats?.walletScans ?? "–";
   const lastAlert = formatTimeAgo(stats?.lastAlert as string | null);
 
   const usedCodes = codes.filter(c => c.is_used).length;
   const freeCodes = codes.filter(c => !c.is_used).length;
+
+  // Paginated codes
+  const totalPages = Math.max(1, Math.ceil(codes.length / CODES_PER_PAGE));
+  const pagedCodes = codes.slice(codePage * CODES_PER_PAGE, (codePage + 1) * CODES_PER_PAGE);
 
   return (
     <div
@@ -236,11 +287,11 @@ export default function Admin() {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 shrink-0">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/")}>
-          <ArrowLeft className="w-4 h-4" />
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/profile")}>
+          <ChevronLeft className="w-4 h-4" />
         </Button>
         <div className="flex items-center gap-2">
-          <h1 className="text-sm font-display font-bold tracking-tight">Administration</h1>
+          <h1 className="text-sm font-display font-bold tracking-tight">{t("admin.title")}</h1>
           {healthLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
         </div>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={fetchHealth} disabled={healthLoading}>
@@ -249,9 +300,9 @@ export default function Admin() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 px-3 pb-3 flex flex-col gap-2.5 min-h-0">
+      <div className="flex-1 px-3 pb-3 flex flex-col gap-2.5 min-h-0 overflow-y-auto scrollbar-hide">
 
-        {/* Row 1: Live Metrics */}
+        {/* Row 1: Live Metrics — clickable */}
         <div className="grid grid-cols-4 gap-2 shrink-0">
           <MetricCard
             icon={Database}
@@ -266,7 +317,7 @@ export default function Admin() {
             label="Alerts"
             value={String(totalAlerts)}
             color="var(--warning)"
-            status={Number(totalAlerts) > 0 ? "healthy" : "healthy"}
+            onClick={() => navigate("/server-alerts")}
           />
           <MetricCard
             icon={Zap}
@@ -275,6 +326,7 @@ export default function Admin() {
             suffix="active"
             color="var(--success)"
             status={dbStatus}
+            onClick={() => navigate("/alert-rules")}
           />
           <MetricCard
             icon={BarChart3}
@@ -291,7 +343,7 @@ export default function Admin() {
           <div className="rounded-xl border border-border/30 p-2.5" style={{ background: "hsl(var(--widget-market) / 0.5)" }}>
             <div className="flex items-center gap-1.5 mb-1.5">
               <Server className="w-3 h-3 text-[hsl(var(--chart-blue))]" />
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Services</span>
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">{t("admin.services")}</span>
             </div>
             <ServiceRow name="Moralis API" status={moralisStatus} latency={health?.moralis?.latencyMs} />
             <ServiceRow name="CoinMarketCap" status={cmcStatus} latency={health?.cmc?.latencyMs} />
@@ -305,87 +357,135 @@ export default function Admin() {
           <div className="rounded-xl border border-border/30 p-2.5 flex flex-col gap-1.5" style={{ background: "hsl(var(--widget-actions) / 0.5)" }}>
             <div className="flex items-center gap-1.5 mb-0.5">
               <Zap className="w-3 h-3 text-[hsl(var(--chart-cyan))]" />
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Actions</span>
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">{t("admin.actions")}</span>
             </div>
             <Button size="sm" variant="outline" className="w-full text-[10px] h-7 gap-1" onClick={runScanner} disabled={scannerRunning}>
               {scannerRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-              Run Scanner
+              {t("admin.runScanner")}
             </Button>
+
+            {/* Duration picker + Generate */}
+            <Select value={selectedDuration} onValueChange={(v) => setSelectedDuration(v as CodeDuration)}>
+              <SelectTrigger className="h-7 text-[10px]">
+                <Clock className="w-3 h-3 mr-1 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1week">{t("admin.1week")}</SelectItem>
+                <SelectItem value="1month">{t("admin.1month")}</SelectItem>
+                <SelectItem value="3months">{t("admin.3months")}</SelectItem>
+                <SelectItem value="1year">{t("admin.1year")}</SelectItem>
+                <SelectItem value="lifetime">{t("admin.lifetime")}</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Button size="sm" variant="outline" className="w-full text-[10px] h-7 gap-1" onClick={createCode} disabled={genLoading}>
               {genLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
               {t("admin.generate")}
             </Button>
+
             <div className="flex items-center justify-between gap-2 mt-auto text-center">
               <div className="flex-1">
                 <p className="text-sm font-bold font-mono">{freeCodes}</p>
-                <p className="text-[8px] text-muted-foreground uppercase">Available</p>
+                <p className="text-[8px] text-muted-foreground uppercase">{t("admin.available")}</p>
               </div>
               <div className="w-px h-5 bg-border/40" />
               <div className="flex-1">
                 <p className="text-sm font-bold font-mono">{usedCodes}</p>
-                <p className="text-[8px] text-muted-foreground uppercase">Used</p>
+                <p className="text-[8px] text-muted-foreground uppercase">{t("admin.used")}</p>
               </div>
               <div className="w-px h-5 bg-border/40" />
               <div className="flex-1">
                 <p className="text-[9px] font-mono text-muted-foreground">{lastAlert}</p>
-                <p className="text-[8px] text-muted-foreground uppercase">Last Alert</p>
+                <p className="text-[8px] text-muted-foreground uppercase">{t("admin.lastAlert")}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Row 3: Invitation Codes */}
+        {/* Row 3: Invitation Codes — compact grid */}
         <div
-          className="rounded-xl border border-border/30 p-2.5 flex-1 min-h-0 flex flex-col"
+          className="rounded-xl border border-border/30 p-2.5 shrink-0"
           style={{ background: "hsl(var(--widget-alerts) / 0.4)" }}
         >
-          <div className="flex items-center justify-between mb-2 shrink-0">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <Shield className="w-3 h-3 text-[hsl(var(--warning))]" />
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Access Codes</span>
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">{t("admin.accessCodes")}</span>
             </div>
-            <span className="text-[9px] text-muted-foreground font-mono">{codes.length} total</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] text-muted-foreground font-mono">{codes.length} total</span>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-0.5 ml-1">
+                  <button
+                    onClick={() => setCodePage(p => Math.max(0, p - 1))}
+                    disabled={codePage === 0}
+                    className="p-0.5 rounded hover:bg-accent/50 disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                  </button>
+                  <span className="text-[8px] font-mono text-muted-foreground">{codePage + 1}/{totalPages}</span>
+                  <button
+                    onClick={() => setCodePage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={codePage >= totalPages - 1}
+                    className="p-0.5 rounded hover:bg-accent/50 disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 scrollbar-hide">
-            <AnimatePresence initial={false}>
-              {codes.length === 0 ? (
-                <p className="text-center text-[11px] text-muted-foreground py-4">{t("admin.noCodes")}</p>
-              ) : (
-                codes.map((c) => (
-                  <motion.div
-                    key={c.id}
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -40 }}
-                    transition={spring}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-border/20 bg-card/60 backdrop-blur-sm"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <span className="font-mono text-xs font-bold tracking-widest">{c.code}</span>
-                    </div>
-                    <Badge
-                      className={`text-[8px] px-1.5 py-0 h-4 shrink-0 ${
-                        c.is_used
-                          ? "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))] border-[hsl(var(--success)/0.2)]"
-                          : "bg-muted text-muted-foreground border-border/30"
-                      }`}
+          {codes.length === 0 ? (
+            <p className="text-center text-[11px] text-muted-foreground py-4">{t("admin.noCodes")}</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-1.5">
+              <AnimatePresence initial={false} mode="popLayout">
+                {pagedCodes.map((c) => {
+                  const status = getCodeStatus(c);
+                  const statusColor = status === "used"
+                    ? "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))] border-[hsl(var(--success)/0.2)]"
+                    : status === "expired"
+                    ? "bg-[hsl(var(--danger)/0.1)] text-[hsl(var(--danger))] border-[hsl(var(--danger)/0.2)]"
+                    : "bg-muted text-muted-foreground border-border/30";
+
+                  return (
+                    <motion.div
+                      key={c.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={spring}
+                      className="flex flex-col gap-1 px-2 py-1.5 rounded-lg border border-border/20 bg-card/60 backdrop-blur-sm"
                     >
-                      {c.is_used ? t("admin.used") : t("admin.available")}
-                    </Badge>
-                    <button className="p-1 rounded-md hover:bg-accent/50 transition-colors" onClick={() => copyCode(c.code, c.id)}>
-                      {copiedId === c.id
-                        ? <Check className="w-3 h-3 text-[hsl(var(--success))]" />
-                        : <Copy className="w-3 h-3 text-muted-foreground" />}
-                    </button>
-                    <button className="p-1 rounded-md hover:bg-destructive/10 transition-colors" onClick={() => deleteCode(c.id)}>
-                      <Trash2 className="w-3 h-3 text-destructive/70" />
-                    </button>
-                  </motion.div>
-                ))
-              )}
-            </AnimatePresence>
-          </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[11px] font-bold tracking-widest">{c.code}</span>
+                        <div className="flex items-center gap-0.5">
+                          <button className="p-0.5 rounded hover:bg-accent/50 transition-colors" onClick={() => copyCode(c.code, c.id)}>
+                            {copiedId === c.id
+                              ? <Check className="w-2.5 h-2.5 text-[hsl(var(--success))]" />
+                              : <Copy className="w-2.5 h-2.5 text-muted-foreground" />}
+                          </button>
+                          <button className="p-0.5 rounded hover:bg-destructive/10 transition-colors" onClick={() => deleteCode(c.id)}>
+                            <Trash2 className="w-2.5 h-2.5 text-destructive/70" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge className={`text-[7px] px-1 py-0 h-3.5 ${statusColor}`}>
+                          {status === "used" ? t("admin.used") : status === "expired" ? t("admin.expired") : t("admin.available")}
+                        </Badge>
+                        <span className="text-[7px] text-muted-foreground font-mono">
+                          {getDurationLabel((c as any).duration ?? "lifetime", t)}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </div>
     </div>

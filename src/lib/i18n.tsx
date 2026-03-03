@@ -167,17 +167,7 @@ const translations = {
   'nav.alerts': { en: 'Alerts', fr: 'Alertes' },
   'nav.profile': { en: 'Profile', fr: 'Profil' },
 
-  // Admin
-  'admin.title': { en: 'Admin ORACLE', fr: 'Admin ORACLE' },
-  'admin.emailPlaceholder': { en: 'Email', fr: 'Email' },
-  'admin.passwordPlaceholder': { en: 'Password', fr: 'Mot de passe' },
-  'admin.loginError': { en: 'Invalid email or password', fr: 'Email ou mot de passe incorrect' },
-  'admin.access': { en: 'Sign in', fr: 'Se connecter' },
-  'admin.invitationCodes': { en: 'Invitation Codes', fr: "Codes d'invitation" },
-  'admin.generate': { en: 'Generate a code', fr: 'Générer un code' },
-  'admin.used': { en: 'Used', fr: 'Utilisé' },
-  'admin.available': { en: 'Available', fr: 'Disponible' },
-  'admin.noCodes': { en: 'No codes created. Click "Generate a code" to start.', fr: 'Aucun code créé. Cliquez sur "Générer un code" pour commencer.' },
+  // Admin (consolidated)
 
   // Data Provenance
   'prov.source': { en: 'Source', fr: 'Source' },
@@ -261,6 +251,30 @@ const translations = {
   'report.dataProvenance': { en: 'Data Provenance', fr: 'Provenance des données' },
   'report.methodology': { en: 'Methodology & Data Sources', fr: 'Méthodologie et sources de données' },
   'report.disclaimer': { en: 'This report contains on-chain intelligence signals and probabilistic risk indicators. This is not financial or legal advice.', fr: 'Ce rapport contient des signaux d\'intelligence on-chain et des indicateurs de risque probabilistes. Ce n\'est ni un conseil financier ni un conseil juridique.' },
+
+  // Admin
+  'admin.title': { en: 'Administration', fr: 'Administration' },
+  'admin.emailPlaceholder': { en: 'Admin email', fr: 'Email admin' },
+  'admin.passwordPlaceholder': { en: 'Password', fr: 'Mot de passe' },
+  'admin.loginError': { en: 'Invalid credentials', fr: 'Identifiants invalides' },
+  'admin.access': { en: 'Access', fr: 'Accéder' },
+  'admin.invitationCodes': { en: 'Invitation Codes', fr: "Codes d'invitation" },
+  'admin.generate': { en: 'Generate Code', fr: 'Générer un code' },
+  'admin.used': { en: 'Used', fr: 'Utilisé' },
+  'admin.available': { en: 'Available', fr: 'Disponible' },
+  'admin.expired': { en: 'Expired', fr: 'Expiré' },
+  'admin.noCodes': { en: 'No codes generated yet', fr: 'Aucun code généré' },
+  'admin.duration': { en: 'Duration', fr: 'Durée' },
+  'admin.1week': { en: '1 Week', fr: '1 Semaine' },
+  'admin.1month': { en: '1 Month', fr: '1 Mois' },
+  'admin.3months': { en: '3 Months', fr: '3 Mois' },
+  'admin.1year': { en: '1 Year', fr: '1 An' },
+  'admin.lifetime': { en: 'Lifetime', fr: 'À vie' },
+  'admin.services': { en: 'Services', fr: 'Services' },
+  'admin.actions': { en: 'Actions', fr: 'Actions' },
+  'admin.accessCodes': { en: 'Access Codes', fr: "Codes d'accès" },
+  'admin.runScanner': { en: 'Run Scanner', fr: 'Lancer Scanner' },
+  'admin.lastAlert': { en: 'Last Alert', fr: 'Dernière alerte' },
 
   // Error states
   'error.generic': { en: 'An error occurred', fr: 'Une erreur est survenue' },
