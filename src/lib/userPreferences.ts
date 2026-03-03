@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import type { Chain } from './types';
 
 export type UserMode = 'simple' | 'pro';
@@ -42,14 +42,22 @@ function applyTheme(theme: ThemeMode) {
   } else {
     root.classList.remove('dark');
   }
-  // Update meta theme-color
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
     meta.setAttribute('content', theme === 'dark' ? '#0a0e14' : '#f5f6f8');
   }
 }
 
-export function useUserPreferences() {
+interface UserPreferencesContextValue {
+  prefs: UserPreferences;
+  updatePrefs: (partial: Partial<UserPreferences>) => void;
+}
+
+const UserPreferencesContext = createContext<UserPreferencesContextValue | null>(null);
+
+export { UserPreferencesContext };
+
+export function useUserPreferencesProvider() {
   const [prefs, setPrefs] = useState<UserPreferences>(() => {
     const p = loadPrefs();
     applyTheme(p.theme);
@@ -66,4 +74,12 @@ export function useUserPreferences() {
   };
 
   return { prefs, updatePrefs };
+}
+
+export function useUserPreferences(): UserPreferencesContextValue {
+  const ctx = useContext(UserPreferencesContext);
+  if (!ctx) {
+    throw new Error('useUserPreferences must be used within UserPreferencesProvider');
+  }
+  return ctx;
 }

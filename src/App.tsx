@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useUserPreferences } from "@/lib/userPreferences";
+import { useUserPreferencesProvider, UserPreferencesContext } from "@/lib/userPreferences";
 import { useMarketData } from "@/hooks/useMarketData";
 import { AppShell } from "@/components/AppShell";
 import { I18nProvider } from "@/lib/i18n";
@@ -31,8 +31,7 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function AppContent() {
-  const { prefs, updatePrefs } = useUserPreferences();
+function AppRoutes({ prefs, updatePrefs }: { prefs: ReturnType<typeof useUserPreferencesProvider>['prefs']; updatePrefs: ReturnType<typeof useUserPreferencesProvider>['updatePrefs'] }) {
   const { unreadAlerts } = useMarketData();
 
   return (
@@ -72,6 +71,15 @@ function AppContent() {
         />
       </Routes>
     </BrowserRouter>
+  );
+}
+
+function AppContent() {
+  const prefsValue = useUserPreferencesProvider();
+  return (
+    <UserPreferencesContext.Provider value={prefsValue}>
+      <AppRoutes prefs={prefsValue.prefs} updatePrefs={prefsValue.updatePrefs} />
+    </UserPreferencesContext.Provider>
   );
 }
 
