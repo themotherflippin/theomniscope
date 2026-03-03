@@ -86,7 +86,7 @@ export default function WatchlistsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <header className="sticky top-0 z-40 glass-strong border-b border-border/50 px-4 py-3">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary" />
             <h1 className="text-base font-display font-bold tracking-tight">Watchlists</h1>
@@ -100,6 +100,9 @@ export default function WatchlistsPage() {
             <Plus className="w-3.5 h-3.5" /> Add
           </Button>
         </div>
+        <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
+          👁️ Ajoutez des wallets ou tokens à surveiller. Vous recevrez des alertes dès qu'une activité suspecte ou un mouvement important est détecté.
+        </p>
         <div className="flex gap-1.5">
           {tabs.map((tab) => (
             <button

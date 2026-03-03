@@ -53,7 +53,7 @@ export default function Opportunities({ prefs }: OppsProps) {
   return (
     <div>
       <header className="sticky top-0 z-40 glass-strong border-b border-border/50 px-4 py-3">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-2">
           <Zap className="w-4 h-4 text-primary" />
           <h1 className="text-base font-display font-bold text-foreground tracking-tight flex-1">{t('opps.title')}</h1>
           <button
@@ -68,6 +68,9 @@ export default function Opportunities({ prefs }: OppsProps) {
             {t('opps.safeOnly')}
           </button>
         </div>
+        <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
+          🎯 Chaque token est noté automatiquement selon son potentiel, son risque et son momentum. Plus le score est élevé, plus l'opportunité est forte.
+        </p>
 
         <div className="flex items-center gap-1.5 mb-2">
           <span className="text-[10px] text-muted-foreground mr-1">{t('opps.sort')}</span>

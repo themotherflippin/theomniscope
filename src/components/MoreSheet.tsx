@@ -46,12 +46,15 @@ export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh] px-4 pb-6">
-          <SheetHeader className="pb-3">
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh] px-4 pb-10">
+          <SheetHeader className="pb-2">
             <SheetTitle className="text-sm font-display tracking-wide">Hub</SheetTitle>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              Accédez rapidement à tous vos outils d'analyse on-chain.
+            </p>
           </SheetHeader>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3 mt-2 mb-6">
             {visibleItems.map((item, idx) => {
               const isLocked = item.premiumOnly && !premium.isPremium;
               return (
@@ -61,10 +64,10 @@ export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: idx * 0.03, type: "spring", stiffness: 400, damping: 25 }}
                   onClick={() => isLocked ? setShowUpgrade(true) : go(item.path)}
-                  className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border/40 bg-gradient-to-b ${item.color} hover:scale-[1.03] active:scale-[0.97] transition-transform ${isLocked ? 'opacity-60' : ''}`}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border border-border/40 bg-gradient-to-b ${item.color} hover:scale-[1.03] active:scale-[0.97] transition-transform ${isLocked ? 'opacity-60' : ''}`}
                 >
-                  <div className="w-9 h-9 rounded-xl bg-background/60 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                    <item.icon className={`w-4.5 h-4.5 ${item.iconColor}`} />
+                  <div className="w-10 h-10 rounded-xl bg-background/60 backdrop-blur-sm flex items-center justify-center shadow-sm">
+                    <item.icon className={`w-5 h-5 ${item.iconColor}`} />
                   </div>
                   <p className="text-[11px] font-medium text-foreground leading-tight">{item.label}</p>
                   {isLocked && (
