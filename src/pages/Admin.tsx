@@ -300,10 +300,10 @@ export default function Admin() {
           />
         </div>
 
-        {/* Row 2: Services + Actions */}
+        {/* Row 2: Services + Actions — equal height columns */}
         <div className="grid grid-cols-2 gap-2 shrink-0">
-          {/* Live Services */}
-          <div className="rounded-xl border border-border/30 p-2.5" style={{ background: "hsl(var(--widget-market) / 0.5)" }}>
+          {/* Left column: Services (stretched) */}
+          <div className="rounded-xl border border-border/30 p-2.5 flex flex-col" style={{ background: "hsl(var(--widget-market) / 0.5)" }}>
             <div className="flex items-center gap-1.5 mb-1.5">
               <Server className="w-3 h-3 text-[hsl(var(--chart-blue))]" />
               <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">{t("admin.services")}</span>
@@ -314,53 +314,80 @@ export default function Admin() {
             <ServiceRow name="Database" status={dbStatus} latency={dbLatency} />
             <ServiceRow name="Edge Functions" status={efStatus} />
             <ServiceRow name="Storage" status={storageStatus} />
+
+            {/* Uptime summary — fills remaining space */}
+            <div className="mt-auto pt-2 border-t border-border/20">
+              <div className="flex items-center gap-1 mb-1">
+                <Activity className="w-2.5 h-2.5 text-[hsl(var(--success))]" />
+                <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">System Health</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-muted-foreground">Services Up</span>
+                <span className="text-[10px] font-mono font-bold text-[hsl(var(--success))]">
+                  {health ? [moralisStatus, cmcStatus, stripeStatus, dbStatus, efStatus, storageStatus].filter(s => s === "healthy").length : "–"}/6
+                </span>
+              </div>
+              <div className="w-full h-1 rounded-full bg-muted/30 overflow-hidden mt-1">
+                <div
+                  className="h-full rounded-full bg-[hsl(var(--success))]"
+                  style={{ width: health ? `${([moralisStatus, cmcStatus, stripeStatus, dbStatus, efStatus, storageStatus].filter(s => s === "healthy").length / 6) * 100}%` : "0%" }}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="rounded-xl border border-border/30 p-2.5 flex flex-col gap-1.5" style={{ background: "hsl(var(--widget-actions) / 0.5)" }}>
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <Zap className="w-3 h-3 text-[hsl(var(--chart-cyan))]" />
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">{t("admin.actions")}</span>
+          {/* Right column: Actions + Voucher Stats */}
+          <div className="flex flex-col gap-2">
+            {/* Actions */}
+            <div className="rounded-xl border border-border/30 p-2.5 flex flex-col gap-1.5" style={{ background: "hsl(var(--widget-actions) / 0.5)" }}>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <Zap className="w-3 h-3 text-[hsl(var(--chart-cyan))]" />
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">{t("admin.actions")}</span>
+              </div>
+              <Button size="sm" variant="outline" className="w-full text-[10px] h-7 gap-1" onClick={runScanner} disabled={scannerRunning}>
+                {scannerRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                {t("admin.runScanner")}
+              </Button>
+              <Select value={selectedDuration} onValueChange={(v) => setSelectedDuration(v as CodeDuration)}>
+                <SelectTrigger className="h-7 text-[10px]">
+                  <Clock className="w-3 h-3 mr-1 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1week">{t("admin.1week")}</SelectItem>
+                  <SelectItem value="1month">{t("admin.1month")}</SelectItem>
+                  <SelectItem value="3months">{t("admin.3months")}</SelectItem>
+                  <SelectItem value="1year">{t("admin.1year")}</SelectItem>
+                  <SelectItem value="lifetime">{t("admin.lifetime")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" className="w-full text-[10px] h-7 gap-1" onClick={createCode} disabled={genLoading}>
+                {genLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                {t("admin.generate")}
+              </Button>
             </div>
-            <Button size="sm" variant="outline" className="w-full text-[10px] h-7 gap-1" onClick={runScanner} disabled={scannerRunning}>
-              {scannerRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-              {t("admin.runScanner")}
-            </Button>
 
-            {/* Duration picker + Generate */}
-            <Select value={selectedDuration} onValueChange={(v) => setSelectedDuration(v as CodeDuration)}>
-              <SelectTrigger className="h-7 text-[10px]">
-                <Clock className="w-3 h-3 mr-1 text-muted-foreground" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1week">{t("admin.1week")}</SelectItem>
-                <SelectItem value="1month">{t("admin.1month")}</SelectItem>
-                <SelectItem value="3months">{t("admin.3months")}</SelectItem>
-                <SelectItem value="1year">{t("admin.1year")}</SelectItem>
-                <SelectItem value="lifetime">{t("admin.lifetime")}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button size="sm" variant="outline" className="w-full text-[10px] h-7 gap-1" onClick={createCode} disabled={genLoading}>
-              {genLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-              {t("admin.generate")}
-            </Button>
-
-            <div className="flex items-center justify-between gap-2 mt-auto text-center">
-              <div className="flex-1">
-                <p className="text-sm font-bold font-mono">{freeCodes}</p>
-                <p className="text-[8px] text-muted-foreground uppercase">{t("admin.available")}</p>
+            {/* Voucher Stats — fills remaining space */}
+            <div className="rounded-xl border border-border/30 p-2.5 flex-1 flex flex-col justify-center" style={{ background: "hsl(var(--widget-alerts) / 0.3)" }}>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <CreditCard className="w-3 h-3 text-[hsl(var(--warning))]" />
+                <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">Voucher Stats</span>
               </div>
-              <div className="w-px h-5 bg-border/40" />
-              <div className="flex-1">
-                <p className="text-sm font-bold font-mono">{usedCodes}</p>
-                <p className="text-[8px] text-muted-foreground uppercase">{t("admin.used")}</p>
-              </div>
-              <div className="w-px h-5 bg-border/40" />
-              <div className="flex-1">
-                <p className="text-[9px] font-mono text-muted-foreground">{lastAlert}</p>
-                <p className="text-[8px] text-muted-foreground uppercase">{t("admin.lastAlert")}</p>
+              <div className="flex items-center justify-between gap-2 text-center">
+                <div className="flex-1">
+                  <p className="text-sm font-bold font-mono">{freeCodes}</p>
+                  <p className="text-[7px] text-muted-foreground uppercase">{t("admin.available")}</p>
+                </div>
+                <div className="w-px h-5 bg-border/40" />
+                <div className="flex-1">
+                  <p className="text-sm font-bold font-mono">{usedCodes}</p>
+                  <p className="text-[7px] text-muted-foreground uppercase">{t("admin.used")}</p>
+                </div>
+                <div className="w-px h-5 bg-border/40" />
+                <div className="flex-1">
+                  <p className="text-[9px] font-mono text-muted-foreground">{lastAlert}</p>
+                  <p className="text-[7px] text-muted-foreground uppercase">{t("admin.lastAlert")}</p>
+                </div>
               </div>
             </div>
           </div>
