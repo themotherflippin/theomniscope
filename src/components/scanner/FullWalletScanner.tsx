@@ -251,9 +251,28 @@ export default function FullWalletScanner({ initialAddress }: FullWalletScannerP
 
       {/* Error */}
       {activeAddress && error && !isLoading && (
-        <div className="gradient-card rounded-xl p-6 text-center">
+        <div className="gradient-card rounded-xl p-6 text-center space-y-2">
           <ShieldAlert className="w-8 h-8 text-danger mx-auto mb-2" />
-          <p className="text-xs text-danger font-medium">{(error as Error).message}</p>
+          <p className="text-xs text-danger font-medium">
+            {(error as Error).message?.includes("401") || (error as Error).message?.includes("plan")
+              ? "Quota API atteint — le nombre de requêtes quotidiennes est épuisé."
+              : (error as Error).message?.includes("timeout") || (error as Error).message?.includes("Timed")
+                ? "Le scan a pris trop de temps. Essayez avec une profondeur plus faible."
+                : (error as Error).message ?? "Erreur lors du scan"}
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            {(error as Error).message?.includes("401") || (error as Error).message?.includes("plan")
+              ? "Les données on-chain sont fournies par Moralis. Le quota journalier a été atteint, réessayez demain."
+              : "Vérifiez l'adresse et réessayez. Si le problème persiste, essayez plus tard."}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs mt-2"
+            onClick={() => setActiveAddress("")}
+          >
+            Réessayer
+          </Button>
         </div>
       )}
 
