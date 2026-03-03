@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, CreditCard, KeyRound, Loader2, ChevronDown, Shield, Sparkles } from "lucide-react";
+import { Wallet, CreditCard, KeyRound, Loader2, ChevronDown, Shield, Sparkles, Coins } from "lucide-react";
 import { useWeb3Modal } from "@web3modal/ethers/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,10 @@ export default function AccessGateway({ onGranted }: { onGranted: () => void }) 
     loading,
     walletConnecting,
     checkoutLoading,
+    croPaymentLoading,
     error,
     startCheckout,
+    payWithCro,
     submitInvitationCode,
     isWalletConnected,
   } = useAccessGateway();
@@ -150,25 +152,60 @@ export default function AccessGateway({ onGranted }: { onGranted: () => void }) 
             </Button>
           </motion.div>
 
-          {/* 2. Subscribe Weekly */}
-          <motion.div whileTap={{ scale: 0.98 }} transition={spring}>
-            <Button
-              onClick={startCheckout}
-              disabled={checkoutLoading}
-              variant="outline"
-              className="w-full h-12 rounded-xl font-semibold text-sm gap-2 border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.12]"
-            >
-              {checkoutLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CreditCard className="w-4 h-4 text-cyan-400" />
-              )}
-              <span>
-                {lang === "fr" ? "Abonnement Mensuel" : "Subscribe Monthly"}
-              </span>
-              <span className="ml-auto text-xs text-muted-foreground">$29.99/mo</span>
-            </Button>
-          </motion.div>
+          {/* Payment section — only visible after wallet is connected */}
+          {walletConnected && !status.hasAccess && (
+            <>
+              <div className="flex items-center gap-3 py-1">
+                <div className="flex-1 h-px bg-border/30" />
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                  {lang === "fr" ? "choisir un mode de paiement" : "choose payment"}
+                </span>
+                <div className="flex-1 h-px bg-border/30" />
+              </div>
+
+              {/* 2a. Pay with CRO */}
+              <motion.div whileTap={{ scale: 0.98 }} transition={spring}>
+                <Button
+                  onClick={payWithCro}
+                  disabled={croPaymentLoading}
+                  variant="outline"
+                  className="w-full h-12 rounded-xl font-semibold text-sm gap-2 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/30"
+                >
+                  {croPaymentLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Coins className="w-4 h-4 text-amber-400" />
+                  )}
+                  <span>
+                    {croPaymentLoading
+                      ? lang === "fr" ? "Vérification…" : "Verifying…"
+                      : lang === "fr" ? "Payer en CRO" : "Pay with CRO"}
+                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground">399 CRO/mo</span>
+                </Button>
+              </motion.div>
+
+              {/* 2b. Subscribe with Stripe */}
+              <motion.div whileTap={{ scale: 0.98 }} transition={spring}>
+                <Button
+                  onClick={startCheckout}
+                  disabled={checkoutLoading}
+                  variant="outline"
+                  className="w-full h-12 rounded-xl font-semibold text-sm gap-2 border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.12]"
+                >
+                  {checkoutLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CreditCard className="w-4 h-4 text-cyan-400" />
+                  )}
+                  <span>
+                    {lang === "fr" ? "Carte Bancaire" : "Credit Card"}
+                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground">$29.99/mo</span>
+                </Button>
+              </motion.div>
+            </>
+          )}
 
           {/* Divider */}
           <div className="flex items-center gap-3 py-1">
