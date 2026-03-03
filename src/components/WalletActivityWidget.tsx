@@ -23,6 +23,8 @@ import {
   type TransactionRiskFlag,
 } from "@/hooks/useWalletActivity";
 import { useWalletCluster } from "@/hooks/useClusterEngine";
+import { useWalletSearchHistory } from "@/hooks/useWalletSearchHistory";
+import WalletSearchHistory from "@/components/WalletSearchHistory";
 import ClusterPanel from "@/components/cluster/ClusterPanel";
 
 // --- Helpers ---
@@ -170,6 +172,7 @@ export default function WalletActivityWidget({ initialAddress }: { initialAddres
   const [searchParams] = useSearchParams();
   const [inputValue, setInputValue] = useState("");
   const [activeAddress, setActiveAddress] = useState("");
+  const { history, addToHistory, removeFromHistory, clearHistory } = useWalletSearchHistory();
 
   // Auto-fill from prop or URL query param ?wallet=0x...
   useEffect(() => {
@@ -185,6 +188,7 @@ export default function WalletActivityWidget({ initialAddress }: { initialAddres
       const trimmed = inputValue.trim();
       if (/^0x[a-fA-F0-9]{40}$/.test(trimmed)) {
         setActiveAddress(trimmed);
+        addToHistory(trimmed);
       }
     },
     [inputValue]
@@ -255,6 +259,18 @@ export default function WalletActivityWidget({ initialAddress }: { initialAddres
           Scan
         </Button>
       </form>
+
+      {/* History */}
+      <WalletSearchHistory
+        history={history}
+        onSelect={(addr) => {
+          setInputValue(addr);
+          setActiveAddress(addr);
+          addToHistory(addr);
+        }}
+        onRemove={removeFromHistory}
+        onClear={clearHistory}
+      />
 
       {/* Content */}
       {!activeAddress && <EmptyState />}
