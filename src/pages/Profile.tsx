@@ -182,19 +182,19 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
           </WidgetCard>
         </div>
 
-        {/* Row 2: Appearance — Theme + Mode */}
+        {/* Row 2: Appearance — Theme + Mode side by side */}
         <WidgetCard
           icon={Palette}
           color="var(--chart-cyan)"
           title={t('profile.appearance')}
         >
-          <div className="space-y-2.5">
+          <div className="grid grid-cols-2 gap-3">
             {/* Theme */}
             <div>
               <p className="text-[10px] text-muted-foreground mb-1.5 font-medium">
                 {lang === 'fr' ? 'Thème' : 'Theme'}
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <OptionChip
                   active={prefs.theme === 'light'}
                   label={t('profile.light')}
@@ -215,7 +215,7 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
               <p className="text-[10px] text-muted-foreground mb-1.5 font-medium">
                 {t('profile.displayMode')}
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <OptionChip
                   active={prefs.mode === 'simple'}
                   label={t('onboarding.simple')}
@@ -269,7 +269,7 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
                 </p>
                 <span className="text-[9px] font-mono text-muted-foreground">{prefs.chains.length}/7</span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex gap-1">
                 {chainOptions.map(c => (
                   <OptionChip
                     key={c.id}
@@ -326,20 +326,29 @@ export default function Profile({ prefs, onUpdatePrefs }: ProfileProps) {
                 : (lang === 'fr' ? '1 analyse/jour' : '1 insight/day')}
               onClick={() => {}}
             />
-            {isAdmin && (
-              <QuickNavRow
-                icon={ShieldCheck}
-                label="Administration"
-                onClick={() => navigate('/admin')}
-                trailing={
-                  <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
-                    Admin
-                  </span>
-                }
-              />
-            )}
           </div>
         </WidgetCard>
+
+        {/* Admin — separate block, only visible to admin */}
+        {isAdmin && (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            transition={spring}
+            onClick={() => navigate('/admin')}
+            className="w-full flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-3"
+          >
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-destructive/10">
+              <ShieldCheck className="w-4 h-4 text-destructive" strokeWidth={1.8} />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="text-[13px] font-medium text-foreground">Administration</span>
+            </div>
+            <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
+              Admin
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+          </motion.button>
+        )}
 
         {/* Footer */}
         <div className="text-center text-[10px] text-muted-foreground/40 pt-1 pb-4 space-y-0.5 font-mono">
