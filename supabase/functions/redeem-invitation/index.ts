@@ -7,6 +7,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// --- Rate Limiter ---
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 10; // max requests per window
+const RATE_WINDOW_MS = 60_000; // 1 minute
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT;
+}
+
 function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -30,6 +46,11 @@ serve(async (req) => {
 
     if (!device_id || typeof device_id !== "string" || device_id.length > 128) {
       return jsonResponse({ error: "Invalid device_id" }, 400);
+    }
+
+    // Rate limit by device_id
+    if (isRateLimited(device_id)) {
+      return jsonResponse({ error: "Too many requests" }, 429);
     }
 
     const supabase = createClient(
@@ -61,7 +82,6 @@ serve(async (req) => {
         return jsonResponse({ error: "Invalid code format" }, 400);
       }
 
-      // Look up the code
       const { data: codeData } = await supabase
         .from("invitation_codes")
         .select("*")
@@ -74,23 +94,18 @@ serve(async (req) => {
 
       const invitation = codeData[0];
 
-      // Check if already used by this device
       if (invitation.is_used && invitation.device_id === device_id) {
-        // Already redeemed by this device — grant access
         return jsonResponse({ success: true, already_redeemed: true });
       }
 
-      // Check if used by someone else
       if (invitation.is_used) {
         return jsonResponse({ error: "Code already used" }, 409);
       }
 
-      // Check expiry
       if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
         return jsonResponse({ error: "Code expired" }, 410);
       }
 
-      // Mark code as used
       const { error: updateErr } = await supabase
         .from("invitation_codes")
         .update({
@@ -105,7 +120,6 @@ serve(async (req) => {
         return jsonResponse({ error: "Failed to redeem code" }, 500);
       }
 
-      // Create or update user_access
       const sessionToken = generateSessionToken();
       const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -133,7 +147,6 @@ serve(async (req) => {
         });
       }
 
-      // Log event
       await supabase.from("access_events").insert({
         device_id,
         event_type: "invitation_code",
