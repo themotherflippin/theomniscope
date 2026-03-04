@@ -7,6 +7,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// --- Rate Limiter ---
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 60_000;
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -19,6 +35,15 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ has_access: false, reason: "no_session" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Rate limit by device_id or session_token
+    const limitKey = device_id || session_token || "unknown";
+    if (isRateLimited(limitKey)) {
+      return new Response(
+        JSON.stringify({ has_access: false, reason: "rate_limited" }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -47,7 +72,6 @@ serve(async (req) => {
 
     const user = data[0];
 
-    // Check session expiry
     if (user.session_expires_at && new Date(user.session_expires_at) < new Date()) {
       return new Response(
         JSON.stringify({ has_access: false, reason: "session_expired" }),
@@ -55,7 +79,6 @@ serve(async (req) => {
       );
     }
 
-    // Check subscription expiry
     if (user.access_type === "subscription" && user.subscription_expires_at) {
       if (new Date(user.subscription_expires_at) < new Date()) {
         await supabase
