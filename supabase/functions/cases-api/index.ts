@@ -55,7 +55,14 @@ serve(async (req) => {
   try {
     const supabase = getSupabase();
     const body = req.method !== "GET" ? await req.json() : {};
-    const { action } = body;
+    const { action, device_id } = body;
+
+    // Device-based authorization (except public case viewing)
+    if (action !== "get_public_case") {
+      if (!device_id || typeof device_id !== "string") return err("device_id required", 401);
+      const { data: userData } = await supabase.from("user_access").select("id").eq("device_id", device_id).limit(1);
+      if (!userData || userData.length === 0) return err("Unauthorized", 403);
+    }
 
     // ===== CASES CRUD =====
 

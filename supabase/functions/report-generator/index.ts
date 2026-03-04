@@ -303,7 +303,12 @@ serve(async (req) => {
   try {
     const supabase = getSupabase();
     const body = await req.json();
-    const { action } = body;
+    const { action, device_id } = body;
+
+    // Device-based authorization
+    if (!device_id || typeof device_id !== "string") return json({ error: "device_id required" }, 401);
+    const { data: userData } = await supabase.from("user_access").select("id").eq("device_id", device_id).limit(1);
+    if (!userData || userData.length === 0) return json({ error: "Unauthorized" }, 403);
 
     if (action === "generate") {
       const { case_id } = body;
@@ -357,12 +362,16 @@ serve(async (req) => {
         return json({ error: errMsg }, 500);
       }
 
-      const { data: txtUrl } = supabase.storage.from("reports").getPublicUrl(txtPath);
-      const { data: jsonUrl } = supabase.storage.from("reports").getPublicUrl(jsonPath);
+      // Use signed URLs instead of public URLs
+      const { data: txtSignedUrl, error: txtSignErr } = await supabase.storage.from("reports").createSignedUrl(txtPath, 3600);
+      const { data: jsonSignedUrl, error: jsonSignErr } = await supabase.storage.from("reports").createSignedUrl(jsonPath, 3600);
 
-      await supabase.from("report_jobs").update({ status: "done", output_url: txtUrl.publicUrl, output_json_url: jsonUrl.publicUrl }).eq("id", job.id);
+      const txtFinalUrl = txtSignedUrl?.signedUrl || txtPath;
+      const jsonFinalUrl = jsonSignedUrl?.signedUrl || jsonPath;
 
-      return json({ job_id: job.id, status: "done", output_url: txtUrl.publicUrl, output_json_url: jsonUrl.publicUrl });
+      await supabase.from("report_jobs").update({ status: "done", output_url: txtFinalUrl, output_json_url: jsonFinalUrl }).eq("id", job.id);
+
+      return json({ job_id: job.id, status: "done", output_url: txtFinalUrl, output_json_url: jsonFinalUrl });
     }
 
     if (action === "get_status") {

@@ -81,7 +81,17 @@ serve(async (req) => {
   }
 
   try {
-    const { tx_hash, device_id, wallet_address } = await req.json();
+    const body = await req.json();
+
+    // Return payment config (no sensitive data exposed)
+    if (body.action === "get_payment_config") {
+      return new Response(
+        JSON.stringify({ address: RECEIVING_WALLET, amount: String(REQUIRED_CRO), chain_id: 25 }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { tx_hash, device_id, wallet_address } = body;
 
     // Input validation
     if (!tx_hash || !device_id || !wallet_address) {

@@ -28,10 +28,17 @@ export interface CreateAlertRuleInput {
   severity?: AlertRule["severity"];
 }
 
+// --- Device ID helper ---
+function getDeviceId(): string {
+  let id = localStorage.getItem("oracle_device_id");
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem("oracle_device_id", id); }
+  return id;
+}
+
 // --- API calls ---
 
 async function invokeRules<T>(body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke("alert-rules-api", { body });
+  const { data, error } = await supabase.functions.invoke("alert-rules-api", { body: { ...body, device_id: getDeviceId() } });
   if (error) throw new Error(error.message);
   if (data?.error) throw new Error(data.error);
   return data as T;
