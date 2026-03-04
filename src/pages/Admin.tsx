@@ -23,9 +23,9 @@ import {
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
 }
 
 const spring = { type: "spring" as const, stiffness: 500, damping: 30 };
@@ -171,11 +171,12 @@ export default function Admin() {
   }, []);
 
   const fetchCodes = useCallback(async () => {
-    const { data } = await supabase
-      .from("invitation_codes")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (data) setCodes(data);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-invitations", {
+        body: { action: "list", device_id: localStorage.getItem("oracle_device_id") || "" },
+      });
+      if (!error && data?.codes) setCodes(data.codes);
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -202,22 +203,30 @@ export default function Admin() {
 
   const createCode = async () => {
     setGenLoading(true);
-    const days = DURATION_DAYS[selectedDuration];
-    const expiresAt = days
-      ? new Date(Date.now() + days * 86400000).toISOString()
-      : null;
-    await supabase.from("invitation_codes").insert({
-      code: generateCode(),
-      duration: selectedDuration,
-      expires_at: expiresAt,
-    } as any);
-    await fetchCodes();
+    try {
+      await supabase.functions.invoke("admin-invitations", {
+        body: {
+          action: "create",
+          device_id: localStorage.getItem("oracle_device_id") || "",
+          duration: selectedDuration,
+        },
+      });
+      await fetchCodes();
+    } catch {}
     setGenLoading(false);
   };
 
   const deleteCode = async (id: string) => {
-    await supabase.from("invitation_codes").delete().eq("id", id);
-    await fetchCodes();
+    try {
+      await supabase.functions.invoke("admin-invitations", {
+        body: {
+          action: "delete",
+          device_id: localStorage.getItem("oracle_device_id") || "",
+          code_id: id,
+        },
+      });
+      await fetchCodes();
+    } catch {}
   };
 
   const copyCode = (code: string, id: string) => {

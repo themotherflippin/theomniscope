@@ -26,7 +26,12 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { action } = body as { action: string };
+    const { action, device_id } = body as { action: string; device_id?: string };
+
+    // Device-based authorization
+    if (!device_id || typeof device_id !== "string") return jsonResponse({ error: "device_id required" }, 401);
+    const { data: userData } = await db.from("user_access").select("id").eq("device_id", device_id).limit(1);
+    if (!userData || userData.length === 0) return jsonResponse({ error: "Unauthorized" }, 403);
 
     switch (action) {
       case "list": {

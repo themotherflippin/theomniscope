@@ -12,17 +12,24 @@ import type {
   CaseItemType,
 } from "@/lib/case.types";
 
+// ---------- Device ID helper ----------
+function getDeviceId(): string {
+  let id = localStorage.getItem("oracle_device_id");
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem("oracle_device_id", id); }
+  return id;
+}
+
 // ---------- Generic invoker ----------
 
 async function invokeCases<T>(body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke("cases-api", { body });
+  const { data, error } = await supabase.functions.invoke("cases-api", { body: { ...body, device_id: getDeviceId() } });
   if (error) throw new Error(error.message ?? "Cases API request failed");
   if (data?.error) throw new Error(data.error);
   return data as T;
 }
 
 async function invokeReports<T>(body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke("report-generator", { body });
+  const { data, error } = await supabase.functions.invoke("report-generator", { body: { ...body, device_id: getDeviceId() } });
   if (error) throw new Error(error.message ?? "Report API request failed");
   if (data?.error) throw new Error(data.error);
   return data as T;
