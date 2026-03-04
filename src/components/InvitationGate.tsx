@@ -27,14 +27,11 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
   useEffect(() => {
     (async () => {
       const deviceId = getDeviceId();
-      const { data } = await supabase
-        .from('invitation_codes')
-        .select('id')
-        .eq('device_id', deviceId)
-        .eq('is_used', true)
-        .limit(1);
+      const { data } = await supabase.functions.invoke("redeem-invitation", {
+        body: { action: "check", device_id: deviceId },
+      });
 
-      if (data && data.length > 0) {
+      if (data?.has_access) {
         onGranted();
       }
       setLoading(false);
@@ -47,40 +44,20 @@ export default function InvitationGate({ onGranted }: { onGranted: () => void })
     setLoading(true);
 
     const deviceId = getDeviceId();
-    const trimmed = code.trim().toUpperCase();
+    const { data, error: fnError } = await supabase.functions.invoke("redeem-invitation", {
+      body: { action: "redeem", code: code.trim(), device_id: deviceId },
+    });
 
-    const { data } = await supabase
-      .from('invitation_codes')
-      .select('*')
-      .eq('code', trimmed)
-      .limit(1);
-
-    if (!data || data.length === 0) {
-      setError(t('gate.invalidCode'));
-      setLoading(false);
-      return;
-    }
-
-    const invitation = data[0];
-
-    if (invitation.is_used && invitation.device_id === deviceId) {
-      onGranted();
-      return;
-    }
-
-    if (invitation.is_used && invitation.device_id !== deviceId) {
-      setError(t('gate.alreadyUsed'));
-      setLoading(false);
-      return;
-    }
-
-    const { error: updateError } = await supabase
-      .from('invitation_codes')
-      .update({ is_used: true, device_id: deviceId, used_at: new Date().toISOString() })
-      .eq('id', invitation.id);
-
-    if (updateError) {
+    if (fnError) {
       setError(t('gate.error'));
+      setLoading(false);
+      return;
+    }
+
+    if (data?.error) {
+      if (data.error === "Invalid code") setError(t('gate.invalidCode'));
+      else if (data.error === "Code already used") setError(t('gate.alreadyUsed'));
+      else setError(data.error);
       setLoading(false);
       return;
     }
