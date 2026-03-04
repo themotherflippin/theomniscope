@@ -250,12 +250,69 @@ export function useAccessGateway() {
     setError(null);
     try {
       const deviceId = getDeviceId();
-      const { data, error: fnError } = await supabase.functions.invoke("redeem-invitation", {
-        body: { action: "redeem", code, device_id: deviceId },
+      const trimmed = code.trim().toUpperCase();
+
+      const { data } = await supabase
+        .from("invitation_codes")
+        .select("*")
+        .eq("code", trimmed)
+        .limit(1);
+
+      if (!data || data.length === 0) {
+        setError("Invalid code.");
+        return false;
+      }
+
+      const invitation = data[0];
+
+      if (invitation.is_used && invitation.device_id === deviceId) {
+        // Already used by this device — grant access
+      } else if (invitation.is_used) {
+        setError("Code already used.");
+        return false;
+      } else {
+        await supabase
+          .from("invitation_codes")
+          .update({ is_used: true, device_id: deviceId, used_at: new Date().toISOString() })
+          .eq("id", invitation.id);
+      }
+
+      const { data: existing } = await supabase
+        .from("user_access")
+        .select("id")
+        .eq("device_id", deviceId)
+        .limit(1);
+
+      const sessionToken =
+        Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, "0")).join("");
+      const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      if (existing && existing.length > 0) {
+        await supabase
+          .from("user_access")
+          .update({
+            access_type: "invitation",
+            session_token: sessionToken,
+            session_expires_at: expiry,
+          })
+          .eq("id", existing[0].id);
+      } else {
+        await supabase.from("user_access").insert({
+          device_id: deviceId,
+          access_type: "invitation",
+          session_token: sessionToken,
+          session_expires_at: expiry,
+        });
+      }
+
+      setSessionToken(sessionToken);
+
+      await supabase.from("access_events").insert({
+        device_id: deviceId,
+        event_type: "invitation_code",
+        metadata: { code: trimmed },
       });
-      if (fnError) throw fnError;
-      if (data?.error) { setError(data.error); return false; }
-      if (data?.session_token) setSessionToken(data.session_token);
+
       setStatus((prev) => ({ ...prev, hasAccess: true, accessType: "invitation" }));
       return true;
     } catch (err: any) {

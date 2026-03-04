@@ -171,11 +171,11 @@ export default function Admin() {
   }, []);
 
   const fetchCodes = useCallback(async () => {
-    const deviceId = localStorage.getItem("oracle_device_id") || "";
-    const { data } = await supabase.functions.invoke("admin-invitations", {
-      body: { action: "list", device_id: deviceId },
-    });
-    if (data?.codes) setCodes(data.codes);
+    const { data } = await supabase
+      .from("invitation_codes")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) setCodes(data);
   }, []);
 
   useEffect(() => {
@@ -202,19 +202,21 @@ export default function Admin() {
 
   const createCode = async () => {
     setGenLoading(true);
-    const deviceId = localStorage.getItem("oracle_device_id") || "";
-    await supabase.functions.invoke("admin-invitations", {
-      body: { action: "create", device_id: deviceId, duration: selectedDuration },
-    });
+    const days = DURATION_DAYS[selectedDuration];
+    const expiresAt = days
+      ? new Date(Date.now() + days * 86400000).toISOString()
+      : null;
+    await supabase.from("invitation_codes").insert({
+      code: generateCode(),
+      duration: selectedDuration,
+      expires_at: expiresAt,
+    } as any);
     await fetchCodes();
     setGenLoading(false);
   };
 
   const deleteCode = async (id: string) => {
-    const deviceId = localStorage.getItem("oracle_device_id") || "";
-    await supabase.functions.invoke("admin-invitations", {
-      body: { action: "delete", device_id: deviceId, code_id: id },
-    });
+    await supabase.from("invitation_codes").delete().eq("id", id);
     await fetchCodes();
   };
 
